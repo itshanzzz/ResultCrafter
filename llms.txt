@@ -1,0 +1,177 @@
+# ResultCrafter
+
+> A minimal, opinionated Result pattern library for modern .NET (10+). Provides `Result<T>`, `Result`, and `Error`
+> as `readonly struct` types, with built-in RFC 9457 ProblemDetails pipeline, structured logging via
+> `[LoggerMessage]`, first-class Minimal API support, and full MVC controller support.
+> Ships as four focused NuGet packages under the `ResultCrafter.*` prefix.
+
+## Key design decisions
+
+- `Result<T>`, `Result`, and `Error` are `readonly struct` — zero heap allocation on the success path.
+- Error responses route through `IProblemDetailsService` on both the Minimal API and controller paths, so enrichment
+  (instance, traceId, requestId) and 4xx structured logging fire from a single `IPostConfigureOptions` callback —
+  `ConfigureResultCrafterProblemDetails` — with no per-path wiring.
+- The exception handler uses `IExceptionHandler` (not custom middleware) so the try/catch cost is paid only when an
+  exception actually occurs, not on every request.
+- All log calls use `[LoggerMessage]` source generation; the 4xx path has an explicit `IsEnabled` guard to avoid
+  string allocations when the log level is filtered.
+- `ProblemActionResult` (controller path) calls `IProblemDetailsService.WriteAsync` inside `ExecuteResultAsync`,
+  giving controllers identical pipeline behaviour to Minimal API endpoints.
+- FluentValidation validators should be registered as `Singleton` when consumed by a Singleton service (validators
+  are stateless). The default FluentValidation lifetime is `Scoped`.
+- `GetInstance` returns `PathBase + Path` only (a valid RFC 9457 relative URI reference). The host is intentionally
+  excluded — it breaks behind reverse proxies.
+- `EfCoreConcurrencyExceptionHandler` is inserted *before* `ResultCrafterExceptionHandler` in the DI list so
+  `DbUpdateConcurrencyException` resolves as 409 rather than falling through to 500.
+- `ResultCrafterMarker` + `ResultCrafterStartupValidator` enforce that both `AddResultCrafter()` and
+  `UseResultCrafter()` are called; misconfiguration throws at startup, not at the first request.
+
+## Packages
+
+- `ResultCrafter.Core` — primitives only, no framework dependencies.
+- `ResultCrafter.AspNetCore` — ProblemDetails pipeline, exception handler, Minimal API extensions, MVC controller
+  extensions. Requires .NET 10+.
+- `ResultCrafter.AspNetCore.EfCore` — intercepts `DbUpdateConcurrencyException` → 409. Call
+  `AddResultCrafterEfCore()` after `AddResultCrafter()`.
+- `ResultCrafter.FluentValidation` — `ValidateToResultAsync` bridge from `IValidator<T>` to `Error.BadRequest`.
+
+## Source layout
+
+### Core primitives (`src/ResultCrafter.Core/`)
+
+- [Error.cs](src/ResultCrafter.Core/Primitives/Error.cs): `readonly struct`. Factory methods: `NotFound`,
+  `Unauthorized`, `Forbidden`, `Conflict`, `ConcurrencyConflict`, `BadRequest(string)`,
+  `BadRequest(Dictionary<string,string[]>)`. `IsValidation` is true only when constructed with a field-errors dict.
+- [Result.cs](src/ResultCrafter.Core/Primitives/Result.cs): Void result. Factories: `NoContent`, `Accepted`,
+  `Fail`. Implicit cast from `Error`.
+- [ResultT.cs](src/ResultCrafter.Core/Primitives/ResultT.cs): `Result<T>`. Factories: `Ok`, `Created`, `Accepted`,
+  `Fail`. Implicit cast from `T` and from `Error`.
+- [ErrorType.cs](src/ResultCrafter.Core/Primitives/ErrorType.cs): `BadRequest`, `NotFound`, `Conflict`,
+  `Unauthorized`, `Forbidden`, `ConcurrencyConflict`.
+- [SuccessKind.cs](src/ResultCrafter.Core/Primitives/SuccessKind.cs): `Ok`, `Created`, `Accepted` — determines
+  which HTTP success code `ToCreatedResult`/`ToAcceptedResult` emits.
+
+### ASP.NET Core — DI wiring (`src/ResultCrafter.AspNetCore/DependencyInjection/`)
+
+- [ServiceCollectionExtensions.cs](src/ResultCrafter.AspNetCore/DependencyInjection/ServiceCollectionExtensions.cs):
+  `AddResultCrafter()` — registers `AddProblemDetails`, `IPostConfigureOptions`, `IExceptionHandler`,
+  `ResultCrafterMarker`, `ResultCrafterStartupValidator`.
+- [ApplicationBuilderExtensions.cs](src/ResultCrafter.AspNetCore/DependencyInjection/ApplicationBuilderExtensions.cs):
+  `UseResultCrafter()` — calls `UseExceptionHandler()` + `UseStatusCodePages()`, marks the sentinel.
+- [ConfigureResultCrafterProblemDetails.cs](src/ResultCrafter.AspNetCore/DependencyInjection/ConfigureResultCrafterProblemDetails.cs):
+  `IPostConfigureOptions<ProblemDetailsOptions>` — enriches every response, logs 4xx, strips internal `x-rc`
+  marker extensions.
+- [ResultCrafterMarker.cs](src/ResultCrafter.AspNetCore/DependencyInjection/ResultCrafterMarker.cs): Sentinel that
+  tracks whether `UseResultCrafter()` was called.
+- [ResultCrafterStartupValidator.cs](src/ResultCrafter.AspNetCore/DependencyInjection/ResultCrafterStartupValidator.cs):
+  `IHostedService` — throws `InvalidOperationException` at startup if the middleware was not registered.
+
+### ASP.NET Core — Minimal API (`src/ResultCrafter.AspNetCore/Endpoints/`)
+
+- [MinimalApiResultExtensions.cs](src/ResultCrafter.AspNetCore/Endpoints/MinimalApiResultExtensions.cs):
+  `ToOkResult`, `ToCreatedResult`, `ToAcceptedResult`, `ToNoContentResult`, `ToProblemResult` — all return
+  `Results<TSuccess, ProblemHttpResult>` typed unions for OpenAPI inference.
+- [RouteHandlerBuilderExtensions.cs](src/ResultCrafter.AspNetCore/Endpoints/RouteHandlerBuilderExtensions.cs):
+  `.ProducesBadRequest()`, `.ProducesUnauthorized()`, `.ProducesForbidden()`, `.ProducesNotFound()`,
+  `.ProducesConflict()` — OpenAPI documentation only, no runtime effect. Uses C# `extension` syntax (.NET 10).
+
+### ASP.NET Core — MVC controllers (`src/ResultCrafter.AspNetCore/Controllers/`)
+
+- [ControllerResultExtensions.cs](src/ResultCrafter.AspNetCore/Controllers/ControllerResultExtensions.cs):
+  `ToOkResult`, `ToCreatedResult`, `ToAcceptedResult`, `ToNoContentResult`, `ToProblemResult` — returns
+  `ActionResult<T>` / `IActionResult`. Failure path returns `ProblemActionResult`.
+- [ProblemActionResult.cs](src/ResultCrafter.AspNetCore/Controllers/ProblemActionResult.cs):
+  `ActionResult` subclass. `ExecuteResultAsync` calls `IProblemDetailsService.WriteAsync` so enrichment and logging
+  fire identically to the Minimal API path.
+- [ControllerResultAttributes.cs](src/ResultCrafter.AspNetCore/Controllers/ControllerResultAttributes.cs):
+  `[ProducesBadRequest]`, `[ProducesUnauthorized]`, `[ProducesForbidden]`, `[ProducesNotFound]`,
+  `[ProducesConflict]` — each inherits `ProducesResponseTypeAttribute<ProblemDetails>`, `AllowMultiple = true`.
+
+### ASP.NET Core — ProblemDetails utilities (`src/ResultCrafter.AspNetCore/ProblemDetails/`)
+
+- [ProblemDetailsBuilder.cs](src/ResultCrafter.AspNetCore/ProblemDetails/ProblemDetailsBuilder.cs): Builds
+  `Microsoft.AspNetCore.Mvc.ProblemDetails` from `Error`. Sets `x-rc` marker and `x-rc-error-id` extension keys;
+  adds `errors` dict only when `error.IsValidation`.
+- [HttpErrorCatalog.cs](src/ResultCrafter.AspNetCore/ProblemDetails/HttpErrorCatalog.cs): `Status(ErrorType)`,
+  `Title(ErrorType)`, `ResolveDetail(Error)` — pure switch expressions, no reflection.
+- [ProblemDetailsEnricher.cs](src/ResultCrafter.AspNetCore/ProblemDetails/ProblemDetailsEnricher.cs):
+  `GetInstance(HttpContext)` → `PathBase + Path` (relative URI, host excluded). `GetTraceId(HttpContext)` → W3C
+  activity ID. Both cached in `HttpContext.Items` with typed object keys. `Enrich(pd, ctx)` — does not overwrite
+  existing values.
+- [ProblemDetailsKeys.cs](src/ResultCrafter.AspNetCore/ProblemDetails/ProblemDetailsKeys.cs): `x-rc` (marker,
+  stripped before response), `x-rc-error-id` (error type string, stripped before response), `errors`
+  (field-errors dict, kept in response).
+- [ResultCrafterLogger.cs](src/ResultCrafter.AspNetCore/ProblemDetails/ResultCrafterLogger.cs):
+  `[LoggerMessage]` source-generated methods: `LogClientError` (level param, EventId 1), `LogUnhandledException`
+  (Error level, EventId 2), `LogResponseAlreadyStarted` (Warning level, EventId 3).
+
+### ASP.NET Core — Exception handling (`src/ResultCrafter.AspNetCore/ExceptionHandling/`)
+
+- [ResultCrafterExceptionHandler.cs](src/ResultCrafter.AspNetCore/ExceptionHandling/ResultCrafterExceptionHandler.cs):
+  `IExceptionHandler` — catches all unhandled exceptions, logs at Error, writes 500 ProblemDetails. Detail is
+  sanitised in production (`ExceptionDetailMode.Auto` checks env name at startup). Returns `false` if response
+  has already started.
+
+### ASP.NET Core — Options (`src/ResultCrafter.AspNetCore/Options/`)
+
+- [ResultCrafterOptions.cs](src/ResultCrafter.AspNetCore/Options/ResultCrafterOptions.cs): `ExceptionDetailMode`
+  (Auto/Sanitized/IncludeExceptionDetails), `DefaultServerErrorMessage`, `ClientErrorLogLevel`.
+
+### EF Core integration (`src/ResultCrafter.AspNetCore.EfCore/`)
+
+- [EfCoreConcurrencyExceptionHandler.cs](src/ResultCrafter.AspNetCore.EfCore/EfCoreConcurrencyExceptionHandler.cs):
+  Handles `DbUpdateConcurrencyException` → 409. Inserted before `ResultCrafterExceptionHandler` in the DI
+  registration list.
+- [ServiceCollectionExtensions.cs](src/ResultCrafter.AspNetCore.EfCore/ServiceCollectionExtensions.cs):
+  `AddResultCrafterEfCore()` — locates the existing `ResultCrafterExceptionHandler` descriptor and inserts the EF
+  Core handler before it. Throws if `AddResultCrafter()` was not called first.
+
+### FluentValidation integration (`src/ResultCrafter.FluentValidation/`)
+
+- [ValidatorExtensions.cs](src/ResultCrafter.FluentValidation/ValidatorExtensions.cs):
+  `ValidateToResultAsync<T>` — returns `null` on success, `Error?` (a `BadRequest` with field-errors dict) on
+  failure. Property names come from FluentValidation as-is; configure
+  `ValidatorOptions.Global.PropertyNameResolver` for casing conventions.
+
+### Demo project (`src/ResultCrafter.Demo/`)
+
+- [Program.cs](src/ResultCrafter.Demo/Program.cs): Wires `AddResultCrafter`, `AddResultCrafterEfCore`,
+  `AddControllers`, `ItemService` (Singleton), validators as Singleton. Mounts Minimal API group at `/api` and
+  controllers at `/api/ctrl`.
+- [DemoEndpoints.cs](src/ResultCrafter.Demo/DemoEndpoints.cs): Minimal API endpoints covering all success kinds
+  (Ok, Created, Accepted typed/void, NoContent) and all error types. Includes `/items/crash`
+  (unhandled exception → 500) and `/items/db-crash` (`DbUpdateConcurrencyException` → 409).
+- [Controllers/ItemsController.cs](src/ResultCrafter.Demo/Controllers/ItemsController.cs): MVC controller mirror
+  of the Minimal API endpoints under `/api/ctrl/items`. Same `ItemService`, same result methods, attribute-based
+  OpenAPI documentation. Includes `Crash()` and `DbCrash()` actions.
+- [ItemService.cs](src/ResultCrafter.Demo/ItemService.cs): In-memory service exercising every Result/Error path.
+- [Demo.http](src/ResultCrafter.Demo/Demo.http): HTTP request file with one request per status code for both
+  Minimal API (`/api/items/*`) and controller (`/api/ctrl/items/*`) prefixes.
+
+## Tests layout (`tests/ResultCrafter.Tests/`)
+
+All tests use xUnit v3. Test files mirror the source namespace they cover.
+
+- `Core/` — `ErrorTests`, `ResultTests`, `ResultTTests`: primitives, equality, implicit conversions.
+- `AspNetCore/` — `DependencyInjectionTests`, `HttpErrorCatalogTests`, `ProblemDetailsBuilderTests`,
+  `ProblemDetailsEnricherTests`: pipeline wiring, status/title/detail mapping, enrichment caching.
+- `AspNetCore/Controllers/` — `ControllerResultExtensionsTests` (~35 tests), `ProblemActionResultTests` (~24
+  tests using `CapturingProblemDetailsService` spy), `ControllerResultAttributesTests` (~17 tests verifying
+  status codes, types, `AllowMultiple`, and `AttributeTargets.Method`).
+- `FluentValidation/` — `ValidatorExtensionsTests`: null on success, field-errors dict on failure.
+
+## Extension points and conventions
+
+- To add a new `ErrorType`: add the enum value in `ErrorType.cs`, add a factory on `Error`, add `Status`/`Title`
+  /`DefaultDetail` cases in `HttpErrorCatalog`, add `ProducesXxx` attribute and builder extension.
+- Never add per-request host resolution to `GetInstance` — it must remain a relative URI for proxy safety.
+- `x-rc` and `x-rc-error-id` are internal pipeline markers. They are always stripped before the response is
+  written. Do not document them as public API.
+- `IProblemDetailsService.WriteAsync` (not `TryWriteAsync`) is the correct method name in .NET 10.
+
+## Optional
+
+- [README.md](README.md): Full usage documentation, alternatives comparison, configuration reference, performance
+  notes.
+- [Demo.http](src/ResultCrafter.Demo/Demo.http): Run the demo project then execute requests directly in JetBrains
+  Rider, VS Code REST Client, or any `.http`-compatible tool.

@@ -1,3 +1,5 @@
+![ResultCrafter](https://raw.githubusercontent.com/HaikAsatryan/ResultCrafter/main/ResultCrafterLogHorizontal.png)
+
 # ResultCrafter
 
 A minimal, opinionated Result pattern library for modern .NET, with built-in RFC 9457 ProblemDetails, structured
@@ -170,8 +172,10 @@ entire team needs to think in functional terms or the code becomes inconsistent.
 
 An exception-driven library where you throw typed exceptions (`NotFoundException`, `BadRequestException`, etc.) and a
 middleware pipeline catches, maps, and logs them as ProblemDetails. It works, but it carries the same trade-offs as any
-exception-as-control-flow approach: performance cost, invisible failure contracts, and harder-to-test code. ResultCrafter
-was built to address exactly those issues. The two can coexist if you want exception handling for truly unexpected errors
+exception-as-control-flow approach: performance cost, invisible failure contracts, and harder-to-test code.
+ResultCrafter
+was built to address exactly those issues. The two can coexist if you want exception handling for truly unexpected
+errors
 alongside Result types for expected ones.
 
 ---
@@ -180,12 +184,12 @@ alongside Result types for expected ones.
 
 ResultCrafter ships as four focused packages so you only take what you need.
 
-| Package                           | Purpose                                                                                                                                          |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ResultCrafter.Core`              | The `Result<T>`, `Result`, `Error`, and `ErrorType` primitives. No framework dependencies.                                                       |
+| Package                           | Purpose                                                                                                                                              |
+|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ResultCrafter.Core`              | The `Result<T>`, `Result`, `Error`, and `ErrorType` primitives. No framework dependencies.                                                           |
 | `ResultCrafter.AspNetCore`        | RFC 9457 ProblemDetails pipeline, `IExceptionHandler`, structured logging, Minimal API extensions, and MVC controller extensions. Requires .NET 10+. |
-| `ResultCrafter.AspNetCore.EfCore` | Intercepts `DbUpdateConcurrencyException` and maps it to a 409 ProblemDetails response automatically.                                            |
-| `ResultCrafter.FluentValidation`  | Bridges `IValidator<T>` to `Error.BadRequest` with field-level error dictionaries.                                                               |
+| `ResultCrafter.AspNetCore.EfCore` | Intercepts `DbUpdateConcurrencyException` and maps it to a 409 ProblemDetails response automatically.                                                |
+| `ResultCrafter.FluentValidation`  | Bridges `IValidator<T>` to `Error.BadRequest` with field-level error dictionaries.                                                                   |
 
 ---
 
@@ -332,8 +336,13 @@ A validation 400 from `Error.BadRequest(fieldErrors)` produces:
     "detail": "the_request_was_invalid_or_cannot_be_otherwise_served",
     "instance": "/api/orders",
     "errors": {
-        "email": ["Email is required.", "Email must be a valid address."],
-        "quantity": ["Quantity must be greater than 0."]
+        "email": [
+            "Email is required.",
+            "Email must be a valid address."
+        ],
+        "quantity": [
+            "Quantity must be greater than 0."
+        ]
     },
     "traceId": "00-abc123def456abc123def456abc123de-abc123def456abc1-00",
     "requestId": "0HN8K2MJ7F4QP:00000002"

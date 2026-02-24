@@ -4,9 +4,11 @@
     <File Path=".github/workflows/main.yml" />
     <File Path=".github/workflows/pr.yml" />
     <File Path=".gitignore" />
+    <File Path="CODE_OF_CONDUCT.md" />
     <File Path="Directory.Build.props" />
     <File Path="global.json" />
-    <File Path="LICENSE.txt" />
+    <File Path="LICENSE" />
+    <File Path="llms.txt" />
     <File Path="Readme.md" />
   </Folder>
   <Folder Name="/src/">
