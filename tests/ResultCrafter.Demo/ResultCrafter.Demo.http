@@ -1,0 +1,332 @@
+### ResultCrafter Demo — HTTP Requests
+### Base URL: https://localhost:5001
+### Run the demo project, then execute any request in your IDE.
+
+@base = https://localhost:80/api
+
+# ============================================================
+# MINIMAL API ENDPOINTS  (/api/items/*)
+# ============================================================
+
+### [200] Get existing item — create one first via POST /items
+GET {{base}}/items/1
+Accept: application/json
+
+###
+
+### [404] Get item that does not exist
+GET {{base}}/items/9999
+Accept: application/json
+
+###
+
+### [201] Create item — valid request
+POST {{base}}/items
+Content-Type: application/json
+
+{
+    "name": "Widget Pro",
+    "price": 29.99,
+    "stock": 100
+}
+
+###
+
+### [400] Create item — validation failure (field errors)
+POST {{base}}/items
+Content-Type: application/json
+
+{
+    "name": "",
+    "price": -5,
+    "stock": 10
+}
+
+###
+
+### [200] Update item — valid request (use version=1 after creating)
+PUT {{base}}/items/1
+Content-Type: application/json
+
+{
+    "name": "Widget Pro v2",
+    "price": 34.99,
+    "stock": 80,
+    "version": 1
+}
+
+###
+
+### [400] Update item — validation failure (field errors)
+PUT {{base}}/items/1
+Content-Type: application/json
+
+{
+    "name": "",
+    "price": 0,
+    "stock": -10,
+    "version": 1
+}
+
+###
+
+### [409] Update item — concurrency conflict (stale version)
+PUT {{base}}/items/1
+Content-Type: application/json
+
+{
+    "name": "Widget Pro",
+    "price": 29.99,
+    "stock": 100,
+    "version": 999
+}
+
+###
+
+### [409] Update item — name conflict (same name as another item)
+# First create a second item, then try to rename item 1 to match it
+PUT {{base}}/items/1
+Content-Type: application/json
+
+{
+    "name": "Existing Item Name",
+    "price": 29.99,
+    "stock": 100,
+    "version": 2
+}
+
+###
+
+### [204] Delete item
+DELETE {{base}}/items/1
+Accept: application/json
+
+###
+
+### [404] Delete item that does not exist
+DELETE {{base}}/items/9999
+Accept: application/json
+
+###
+
+### [202] Reserve item — background workflow queued, poll GET /items/{id} to confirm
+POST {{base}}/items/1/reserve
+Accept: application/json
+
+###
+
+### [403] Reserve item that is already reserved
+POST {{base}}/items/1/reserve
+Accept: application/json
+
+###
+
+### [404] Reserve item that does not exist
+POST {{base}}/items/9999/reserve
+Accept: application/json
+
+###
+
+### [202] Bulk delete — valid request (no response body)
+POST {{base}}/items/bulk-delete
+Content-Type: application/json
+
+{
+    "ids": [2, 3, 4]
+}
+
+###
+
+### [400] Bulk delete — empty list (plain detail, no errors dict)
+POST {{base}}/items/bulk-delete
+Content-Type: application/json
+
+{
+    "ids": []
+}
+
+###
+
+### [400] Bulk delete — invalid IDs (structured errors dict)
+POST {{base}}/items/bulk-delete
+Content-Type: application/json
+
+{
+    "ids": [-1, 0, 5]
+}
+
+###
+
+### [200] Admin list — authenticated and authorized
+GET {{base}}/items/admin
+Accept: application/json
+X-Api-Key: any-value-works
+X-Role: admin
+
+###
+
+### [401] Admin list — missing API key
+GET {{base}}/items/admin
+Accept: application/json
+
+###
+
+### [403] Admin list — wrong role
+GET {{base}}/items/admin
+Accept: application/json
+X-Api-Key: any-value-works
+X-Role: viewer
+
+###
+
+### [500] Unhandled exception demo — ResultCrafterExceptionHandler converts to 500 ProblemDetails
+# Watch the server logs: the full exception is logged at Error level.
+# The response detail is sanitized in production, full in dev/staging.
+GET {{base}}/items/crash
+Accept: application/json
+
+###
+
+### [409] DbUpdateConcurrencyException demo — EfCore handler intercepts as 409
+# The EfCoreConcurrencyExceptionHandler fires BEFORE the generic 500 handler.
+# This demonstrates that DbUpdateConcurrencyException never becomes a 500.
+GET {{base}}/items/db-crash
+Accept: application/json
+
+###
+
+
+# ============================================================
+# MVC CONTROLLER ENDPOINTS  (/api/ctrl/items/*)
+# Same ItemService, same results — different routing + MVC syntax.
+# ============================================================
+
+@ctrl = https://localhost:5001/api/ctrl
+
+### [200] Get existing item (controller)
+GET {{ctrl}}/items/1
+Accept: application/json
+
+###
+
+### [404] Get item that does not exist (controller)
+GET {{ctrl}}/items/9999
+Accept: application/json
+
+###
+
+### [201] Create item (controller)
+POST {{ctrl}}/items
+Content-Type: application/json
+
+{
+    "name": "Controller Widget",
+    "price": 19.99,
+    "stock": 50
+}
+
+###
+
+### [400] Create item — validation failure (controller)
+POST {{ctrl}}/items
+Content-Type: application/json
+
+{
+    "name": "",
+    "price": -1,
+    "stock": 10
+}
+
+###
+
+### [200] Update item (controller)
+PUT {{ctrl}}/items/1
+Content-Type: application/json
+
+{
+    "name": "Controller Widget v2",
+    "price": 24.99,
+    "stock": 40,
+    "version": 1
+}
+
+###
+
+### [409] Update item — concurrency conflict (controller)
+PUT {{ctrl}}/items/1
+Content-Type: application/json
+
+{
+    "name": "Controller Widget",
+    "price": 19.99,
+    "stock": 50,
+    "version": 999
+}
+
+###
+
+### [204] Delete item (controller)
+DELETE {{ctrl}}/items/1
+Accept: application/json
+
+###
+
+### [202] Reserve item (controller)
+POST {{ctrl}}/items/1/reserve
+Accept: application/json
+
+###
+
+### [202] Bulk delete (controller)
+POST {{ctrl}}/items/bulk-delete
+Content-Type: application/json
+
+{
+    "ids": [10, 11, 12]
+}
+
+###
+
+### [400] Bulk delete — empty list (controller)
+POST {{ctrl}}/items/bulk-delete
+Content-Type: application/json
+
+{
+    "ids": []
+}
+
+###
+
+### [200] Admin list (controller)
+GET {{ctrl}}/items/admin
+Accept: application/json
+X-Api-Key: any-value-works
+X-Role: admin
+
+###
+
+### [401] Admin list — missing API key (controller)
+GET {{ctrl}}/items/admin
+Accept: application/json
+
+###
+
+### [403] Admin list — wrong role (controller)
+GET {{ctrl}}/items/admin
+Accept: application/json
+X-Api-Key: any-value-works
+X-Role: viewer
+
+###
+
+### [500] Unhandled exception demo (controller) — same IExceptionHandler as Minimal API
+GET {{ctrl}}/items/crash
+Accept: application/json
+
+###
+
+### [409] DbUpdateConcurrencyException demo (controller) — same EfCore handler
+GET {{ctrl}}/items/db-crash
+Accept: application/json
+
+###

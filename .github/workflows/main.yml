@@ -1,0 +1,67 @@
+name: Publish NuGet Packages
+
+env:
+  NUGET_SOURCE: 'https://api.nuget.org/v3/index.json'
+  OUTPUT_DIR: 'nupkgs'
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+      - name: Pack ResultCrafter.Core
+        run: >
+          dotnet pack src/ResultCrafter.Core/ResultCrafter.Core.csproj
+          --no-build
+          --configuration Release
+          --output ${{ env.OUTPUT_DIR }}
+
+      - name: Pack ResultCrafter.AspNetCore
+        run: >
+          dotnet pack src/ResultCrafter.AspNetCore/ResultCrafter.AspNetCore.csproj
+          --no-build
+          --configuration Release
+          --output ${{ env.OUTPUT_DIR }}
+
+      - name: Pack ResultCrafter.AspNetCore.EfCore
+        run: >
+          dotnet pack src/ResultCrafter.AspNetCore.EfCore/ResultCrafter.AspNetCore.EfCore.csproj
+          --no-build
+          --configuration Release
+          --output ${{ env.OUTPUT_DIR }}
+
+      - name: Pack ResultCrafter.FluentValidation
+        run: >
+          dotnet pack src/ResultCrafter.FluentValidation/ResultCrafter.FluentValidation.csproj
+          --no-build
+          --configuration Release
+          --output ${{ env.OUTPUT_DIR }}
+
+      - name: Publish all packages
+        run: >
+          dotnet nuget push "${{ env.OUTPUT_DIR }}/*.nupkg"
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source ${{ env.NUGET_SOURCE }}
+          --skip-duplicate

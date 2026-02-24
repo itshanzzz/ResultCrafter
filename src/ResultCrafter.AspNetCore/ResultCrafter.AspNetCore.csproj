@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>ResultCrafter integration for ASP.NET Core (.NET 10+): ProblemDetails (RFC 9457), structured logging, IExceptionHandler pipeline, and Minimal API/MVC result mapping.</Description>
+        <PackageTags>aspnetcore;minimal-api;mvc;result-pattern;problemdetails;rfc9457;error-handling;exception-handling;iexceptionhandler;structured-logging;typedresults</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ResultCrafter.Core\ResultCrafter.Core.csproj" />
+    </ItemGroup>
+
+</Project>
