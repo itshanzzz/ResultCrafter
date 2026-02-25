@@ -4,44 +4,52 @@ using ResultCrafter.Core.Primitives;
 namespace ResultCrafter.AspNetCore.Controllers;
 
 /// <summary>
-/// Extension methods that map <see cref="Result{T}"/>, <see cref="Result"/>, and
-/// <see cref="Error"/> values to typed <c>ActionResult</c> responses for use in MVC
-/// controller actions.
+///    Extension methods that map <see cref="Result{T}" />, <see cref="Result" />, and
+///    <see cref="Error" /> values to typed <c>ActionResult</c> responses for use in MVC
+///    controller actions.
 /// </summary>
 /// <remarks>
-/// On the success path these methods return the appropriate typed <c>ActionResult</c>
-/// (e.g. <see cref="OkObjectResult"/>, <see cref="CreatedResult"/>). On the failure
-/// path they return a <see cref="ProblemActionResult"/> that routes through
-/// <see cref="Microsoft.AspNetCore.Http.IProblemDetailsService"/>, giving every controller
-/// error response the same RFC 9457 shape, enrichment, and structured logging as a
-/// Minimal API error response.
-/// <para>
-/// Decorate controller actions with the <see cref="ControllerResultAttributes"/> family
-/// (<c>[ProducesNotFound]</c>, <c>[ProducesBadRequest]</c>, etc.) to add the
-/// corresponding ProblemDetails status codes to the OpenAPI schema automatically.
-/// </para>
+///    On the success path these methods return the appropriate typed <c>ActionResult</c>
+///    (e.g. <see cref="OkObjectResult" />, <see cref="CreatedResult" />). On the failure
+///    path they return a <see cref="ProblemActionResult" /> that routes through
+///    <see cref="Microsoft.AspNetCore.Http.IProblemDetailsService" />, giving every controller
+///    error response the same RFC 9457 shape, enrichment, and structured logging as a
+///    Minimal API error response.
+///    <para>
+///       Decorate controller actions with the <see cref="ControllerResultAttributes" /> family
+///       (<c>[ProducesNotFound]</c>, <c>[ProducesBadRequest]</c>, etc.) to add the
+///       corresponding ProblemDetails status codes to the OpenAPI schema automatically.
+///    </para>
 /// </remarks>
 public static class ControllerResultExtensions
 {
+   /// <summary>Maps a bare <see cref="Error" /> directly to a <c>ProblemDetails</c> response.</summary>
+   public static IActionResult ToProblemResult(this Error error)
+   {
+      return new ProblemActionResult(error);
+   }
+
    extension<T>(Result<T> result)
    {
       /// <summary>
-      /// Maps a <see cref="Result{T}"/> to <c>200 Ok</c> on success or
-      /// <c>ProblemDetails</c> on failure.
+      ///    Maps a <see cref="Result{T}" /> to <c>200 Ok</c> on success or
+      ///    <c>ProblemDetails</c> on failure.
       /// </summary>
-      public ActionResult<T> ToOkResult() =>
-         result.IsSuccess
+      public ActionResult<T> ToOkResult()
+      {
+         return result.IsSuccess
             ? new OkObjectResult(result.Value!)
             : new ProblemActionResult(result.Error!.Value);
+      }
 
       /// <summary>
-      /// Maps a <see cref="Result{T}"/> to <c>201 Created</c> on success or
-      /// <c>ProblemDetails</c> on failure.
+      ///    Maps a <see cref="Result{T}" /> to <c>201 Created</c> on success or
+      ///    <c>ProblemDetails</c> on failure.
       /// </summary>
       /// <remarks>
-      /// The result must have been constructed via <see cref="Result{T}.Created"/>;
-      /// calling this on an <c>Ok</c> or <c>Accepted</c> result is a programming error
-      /// and will throw <see cref="InvalidOperationException"/>.
+      ///    The result must have been constructed via <see cref="Result{T}.Created" />;
+      ///    calling this on an <c>Ok</c> or <c>Accepted</c> result is a programming error
+      ///    and will throw <see cref="InvalidOperationException" />.
       /// </remarks>
       public ActionResult<T> ToCreatedResult()
       {
@@ -61,36 +69,39 @@ public static class ControllerResultExtensions
       }
 
       /// <summary>
-      /// Maps a <see cref="Result{T}"/> to <c>202 Accepted</c> on success or
-      /// <c>ProblemDetails</c> on failure.
+      ///    Maps a <see cref="Result{T}" /> to <c>202 Accepted</c> on success or
+      ///    <c>ProblemDetails</c> on failure.
       /// </summary>
-      public ActionResult<T> ToAcceptedResult() =>
-         result.IsSuccess
+      public ActionResult<T> ToAcceptedResult()
+      {
+         return result.IsSuccess
             ? new AcceptedResult(result.Location, result.Value!)
             : new ProblemActionResult(result.Error!.Value);
+      }
    }
 
    extension(Result result)
    {
       /// <summary>
-      /// Maps a void <see cref="Result"/> to <c>204 NoContent</c> on success or
-      /// <c>ProblemDetails</c> on failure.
+      ///    Maps a void <see cref="Result" /> to <c>204 NoContent</c> on success or
+      ///    <c>ProblemDetails</c> on failure.
       /// </summary>
-      public IActionResult ToNoContentResult() =>
-         result.IsSuccess
+      public IActionResult ToNoContentResult()
+      {
+         return result.IsSuccess
             ? new NoContentResult()
             : new ProblemActionResult(result.Error!.Value);
+      }
 
       /// <summary>
-      /// Maps a void <see cref="Result"/> to <c>202 Accepted</c> on success or
-      /// <c>ProblemDetails</c> on failure.
+      ///    Maps a void <see cref="Result" /> to <c>202 Accepted</c> on success or
+      ///    <c>ProblemDetails</c> on failure.
       /// </summary>
-      public IActionResult ToAcceptedResult() =>
-         result.IsSuccess
-            ? new AcceptedResult(result.AcceptedLocation, value: null)
+      public IActionResult ToAcceptedResult()
+      {
+         return result.IsSuccess
+            ? new AcceptedResult(result.AcceptedLocation, null)
             : new ProblemActionResult(result.Error!.Value);
+      }
    }
-
-   /// <summary>Maps a bare <see cref="Error"/> directly to a <c>ProblemDetails</c> response.</summary>
-   public static IActionResult ToProblemResult(this Error error) => new ProblemActionResult(error);
 }

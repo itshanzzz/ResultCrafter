@@ -297,8 +297,9 @@ public sealed class ProblemActionResultTests
       Assert.Equal(expectedTitle, spy.CapturedContext!.ProblemDetails.Title);
    }
 
-   private static Error BuildError(ErrorType type) =>
-      type switch
+   private static Error BuildError(ErrorType type)
+   {
+      return type switch
       {
          ErrorType.BadRequest => Error.BadRequest("detail"),
          ErrorType.NotFound => Error.NotFound("detail"),
@@ -308,10 +309,11 @@ public sealed class ProblemActionResultTests
          ErrorType.ConcurrencyConflict => Error.ConcurrencyConflict("detail"),
          _ => Error.BadRequest("fallback")
       };
+   }
 
    /// <summary>
-   /// Test spy for <see cref="IProblemDetailsService"/>. Captures the context passed
-   /// to <see cref="TryWriteAsync"/> without actually writing an HTTP response.
+   ///    Test spy for <see cref="IProblemDetailsService" />. Captures the context passed
+   ///    to <see cref="TryWriteAsync" /> without actually writing an HTTP response.
    /// </summary>
    private sealed class CapturingProblemDetailsService : IProblemDetailsService
    {

@@ -78,13 +78,13 @@ public sealed class ProblemDetailsBuilderTests
       {
          var error = type switch
          {
-            ErrorType.BadRequest         => Error.BadRequest("detail"),
-            ErrorType.NotFound           => Error.NotFound(),
-            ErrorType.Conflict           => Error.Conflict(),
-            ErrorType.Unauthorized       => Error.Unauthorized(),
-            ErrorType.Forbidden          => Error.Forbidden(),
+            ErrorType.BadRequest => Error.BadRequest("detail"),
+            ErrorType.NotFound => Error.NotFound(),
+            ErrorType.Conflict => Error.Conflict(),
+            ErrorType.Unauthorized => Error.Unauthorized(),
+            ErrorType.Forbidden => Error.Forbidden(),
             ErrorType.ConcurrencyConflict => Error.ConcurrencyConflict(),
-            _                            => Error.BadRequest("fallback")
+            _ => Error.BadRequest("fallback")
          };
 
          var pd = ProblemDetailsBuilder.Build(error);

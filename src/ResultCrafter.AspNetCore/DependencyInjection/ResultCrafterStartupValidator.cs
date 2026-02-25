@@ -3,9 +3,9 @@
 namespace ResultCrafter.AspNetCore.DependencyInjection;
 
 /// <summary>
-/// Validates that both <c>AddResultCrafter()</c> and <c>UseResultCrafter()</c> were
-/// called. Throws <see cref="InvalidOperationException"/> at startup if either is missing,
-/// so misconfiguration is caught before any request is served.
+///    Validates that both <c>AddResultCrafter()</c> and <c>UseResultCrafter()</c> were
+///    called. Throws <see cref="InvalidOperationException" /> at startup if either is missing,
+///    so misconfiguration is caught before any request is served.
 /// </summary>
 internal sealed class ResultCrafterStartupValidator(ResultCrafterMarker marker) : IHostedService
 {
@@ -21,5 +21,8 @@ internal sealed class ResultCrafterStartupValidator(ResultCrafterMarker marker) 
       return Task.CompletedTask;
    }
 
-   public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+   public Task StopAsync(CancellationToken cancellationToken)
+   {
+      return Task.CompletedTask;
+   }
 }

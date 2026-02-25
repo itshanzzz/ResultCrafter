@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ResultCrafter.AspNetCore.ProblemDetails;
 
 namespace ResultCrafter.Tests.AspNetCore;
@@ -10,7 +11,7 @@ public sealed class ProblemDetailsEnricherTests
    [Fact]
    public void GetInstance_ReturnsPathOnly()
    {
-      var ctx = BuildHttpContext(host: "api.example.com", path: "/api/orders/42");
+      var ctx = BuildHttpContext("api.example.com", "/api/orders/42");
 
       var instance = ProblemDetailsEnricher.GetInstance(ctx);
 
@@ -20,7 +21,7 @@ public sealed class ProblemDetailsEnricherTests
    [Fact]
    public void GetInstance_DoesNotIncludeHttpMethod()
    {
-      var ctx = BuildHttpContext(host: "api.example.com", path: "/api/orders", method: "POST");
+      var ctx = BuildHttpContext("api.example.com", "/api/orders", "POST");
 
       var instance = ProblemDetailsEnricher.GetInstance(ctx);
 
@@ -68,7 +69,7 @@ public sealed class ProblemDetailsEnricherTests
    public void Enrich_SetsInstanceOnProblemDetails()
    {
       var ctx = BuildHttpContext("api.example.com", "/api/orders/1");
-      var pd = new Microsoft.AspNetCore.Mvc.ProblemDetails();
+      var pd = new ProblemDetails();
 
       ProblemDetailsEnricher.Enrich(pd, ctx);
 
@@ -79,7 +80,7 @@ public sealed class ProblemDetailsEnricherTests
    public void Enrich_DoesNotOverwriteExistingInstance()
    {
       var ctx = BuildHttpContext("api.example.com", "/api/orders/1");
-      var pd = new Microsoft.AspNetCore.Mvc.ProblemDetails
+      var pd = new ProblemDetails
       {
          Instance = "already-set"
       };
@@ -94,7 +95,7 @@ public sealed class ProblemDetailsEnricherTests
    {
       var ctx = BuildHttpContext("api.example.com", "/api/orders/1");
       ctx.TraceIdentifier = "test-request-id";
-      var pd = new Microsoft.AspNetCore.Mvc.ProblemDetails();
+      var pd = new ProblemDetails();
 
       ProblemDetailsEnricher.Enrich(pd, ctx);
 
@@ -106,7 +107,7 @@ public sealed class ProblemDetailsEnricherTests
    public void Enrich_AddsTraceIdExtension()
    {
       var ctx = BuildHttpContext("api.example.com", "/api/orders/1");
-      var pd = new Microsoft.AspNetCore.Mvc.ProblemDetails();
+      var pd = new ProblemDetails();
 
       ProblemDetailsEnricher.Enrich(pd, ctx);
 
@@ -117,7 +118,7 @@ public sealed class ProblemDetailsEnricherTests
    public void Enrich_DoesNotOverwriteExistingRequestId()
    {
       var ctx = BuildHttpContext("api.example.com", "/api/orders/1");
-      var pd = new Microsoft.AspNetCore.Mvc.ProblemDetails
+      var pd = new ProblemDetails
       {
          Extensions =
          {

@@ -16,11 +16,15 @@ public sealed class VoidResultValidationBehaviorTests
    public async Task Handle_NoValidators_CallsNext()
    {
       var behavior = new VoidResultValidationBehavior<DeleteCommand>([]);
-      var called   = false;
+      var called = false;
 
       await behavior.Handle(
          new DeleteCommand(1),
-         _ => { called = true; return Task.FromResult(Result.NoContent()); },
+         _ =>
+         {
+            called = true;
+            return Task.FromResult(Result.NoContent());
+         },
          CancellationToken.None);
 
       Assert.True(called);
@@ -47,11 +51,15 @@ public sealed class VoidResultValidationBehaviorTests
    public async Task Handle_ValidRequest_CallsNext()
    {
       var behavior = new VoidResultValidationBehavior<DeleteCommand>([new DeleteCommandValidator()]);
-      var called   = false;
+      var called = false;
 
       await behavior.Handle(
          new DeleteCommand(1),
-         _ => { called = true; return Task.FromResult(Result.NoContent()); },
+         _ =>
+         {
+            called = true;
+            return Task.FromResult(Result.NoContent());
+         },
          CancellationToken.None);
 
       Assert.True(called);
@@ -79,11 +87,15 @@ public sealed class VoidResultValidationBehaviorTests
    public async Task Handle_InvalidRequest_DoesNotCallNext()
    {
       var behavior = new VoidResultValidationBehavior<DeleteCommand>([new DeleteCommandValidator()]);
-      var called   = false;
+      var called = false;
 
       await behavior.Handle(
          new DeleteCommand(0),
-         _ => { called = true; return Task.FromResult(Result.NoContent()); },
+         _ =>
+         {
+            called = true;
+            return Task.FromResult(Result.NoContent());
+         },
          CancellationToken.None);
 
       Assert.False(called);
@@ -179,7 +191,11 @@ public sealed class VoidResultValidationBehaviorTests
 
       await behavior.Handle(
          new DeleteCommand(10),
-         _ => { called = true; return Task.FromResult(Result.NoContent()); },
+         _ =>
+         {
+            called = true;
+            return Task.FromResult(Result.NoContent());
+         },
          CancellationToken.None);
 
       Assert.True(called);
@@ -193,27 +209,36 @@ public sealed class VoidResultValidationBehaviorTests
 
    private sealed class DeleteCommandValidator : AbstractValidator<DeleteCommand>
    {
-      public DeleteCommandValidator() =>
-         RuleFor(x => x.Id).GreaterThan(0).WithMessage("Id must be greater than 0.");
+      public DeleteCommandValidator()
+      {
+         RuleFor(x => x.Id)
+            .GreaterThan(0)
+            .WithMessage("Id must be greater than 0.");
+      }
    }
 
    private sealed class DeleteCommandSecondaryValidator : AbstractValidator<DeleteCommand>
    {
-      public DeleteCommandSecondaryValidator() =>
-         RuleFor(x => x.Id).LessThan(1000).WithMessage("Id must be less than 1000.");
+      public DeleteCommandSecondaryValidator()
+      {
+         RuleFor(x => x.Id)
+            .LessThan(1000)
+            .WithMessage("Id must be less than 1000.");
+      }
    }
 
    private sealed class GlobalDeleteValidator : AbstractValidator<DeleteCommand>
    {
       public GlobalDeleteValidator()
       {
-         RuleFor(x => x).Custom((x, ctx) =>
-         {
-            if (x.Id <= 0)
+         RuleFor(x => x)
+            .Custom((x, ctx) =>
             {
-               ctx.AddFailure(new ValidationFailure("", "Command is globally invalid."));
-            }
-         });
+               if (x.Id <= 0)
+               {
+                  ctx.AddFailure(new ValidationFailure("", "Command is globally invalid."));
+               }
+            });
       }
    }
 }

@@ -90,7 +90,7 @@ public sealed class ResultOfTTests
    [Fact]
    public void Accepted_WithLocation_SetsLocation()
    {
-      var result = Result<string>.Accepted("hello", location: "/api/items/1/status");
+      var result = Result<string>.Accepted("hello", "/api/items/1/status");
       Assert.Equal("/api/items/1/status", result.Location);
    }
 

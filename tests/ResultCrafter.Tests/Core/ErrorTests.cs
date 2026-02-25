@@ -102,7 +102,7 @@ public sealed class ErrorTests
    {
       var errors = new Dictionary<string, string[]>
       {
-         ["email"]    = ["Email is required.", "Email must be valid."],
+         ["email"] = ["Email is required.", "Email must be valid."],
          ["quantity"] = ["Quantity must be greater than 0."]
       };
 
@@ -117,8 +117,11 @@ public sealed class ErrorTests
    [Fact]
    public void BadRequest_WithDictionary_OptionalDetailIsCarried()
    {
-      var errors  = new Dictionary<string, string[]> { ["name"] = ["Required."] };
-      var error   = Error.BadRequest(errors, detail: "Validation failed.");
+      var errors = new Dictionary<string, string[]>
+      {
+         ["name"] = ["Required."]
+      };
+      var error = Error.BadRequest(errors, "Validation failed.");
 
       Assert.Equal("Validation failed.", error.Detail);
    }

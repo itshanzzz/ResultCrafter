@@ -132,7 +132,11 @@ POST {{base}}/items/bulk-delete
 Content-Type: application/json
 
 {
-    "ids": [2, 3, 4]
+    "ids": [
+        2,
+        3,
+        4
+    ]
 }
 
 ###
@@ -152,7 +156,11 @@ POST {{base}}/items/bulk-delete
 Content-Type: application/json
 
 {
-    "ids": [-1, 0, 5]
+    "ids": [
+        -1,
+        0,
+        5
+    ]
 }
 
 ###
@@ -282,7 +290,11 @@ POST {{ctrl}}/items/bulk-delete
 Content-Type: application/json
 
 {
-    "ids": [10, 11, 12]
+    "ids": [
+        10,
+        11,
+        12
+    ]
 }
 
 ###

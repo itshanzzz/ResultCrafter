@@ -24,8 +24,8 @@ internal sealed class EfCoreConcurrencyExceptionHandler(ILogger<EfCoreConcurrenc
       {
          ResultCrafterLogger.LogResponseAlreadyStarted(
             logger,
-            httpMethod: httpContext.Request.Method,
-            path: httpContext.Request.Path.Value ?? string.Empty);
+            httpContext.Request.Method,
+            httpContext.Request.Path.Value ?? string.Empty);
 
          return false;
       }
@@ -34,16 +34,16 @@ internal sealed class EfCoreConcurrencyExceptionHandler(ILogger<EfCoreConcurrenc
 
       ResultCrafterLogger.LogClientError(
          logger,
-         level: LogLevel.Warning,
-         statusCode: HttpErrorCatalog.Status(error.Type),
-         title: HttpErrorCatalog.Title(error.Type),
-         detail: HttpErrorCatalog.ResolveDetail(error),
-         errorId: error.Type.ToString(),
-         httpMethod: httpContext.Request.Method,
-         path: httpContext.Request.Path.Value ?? string.Empty,
-         instance: ProblemDetailsEnricher.GetInstance(httpContext),
-         traceId: ProblemDetailsEnricher.GetTraceId(httpContext),
-         requestId: httpContext.TraceIdentifier);
+         LogLevel.Warning,
+         HttpErrorCatalog.Status(error.Type),
+         HttpErrorCatalog.Title(error.Type),
+         HttpErrorCatalog.ResolveDetail(error),
+         error.Type.ToString(),
+         httpContext.Request.Method,
+         httpContext.Request.Path.Value ?? string.Empty,
+         ProblemDetailsEnricher.GetInstance(httpContext),
+         ProblemDetailsEnricher.GetTraceId(httpContext),
+         httpContext.TraceIdentifier);
 
       var pd = ProblemDetailsBuilder.Build(error);
 

@@ -41,23 +41,29 @@ public sealed class DeleteItemCommandValidator : AbstractValidator<DeleteItemCom
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
 /// <summary>
-/// Handles <see cref="GetItemQuery"/>.
-/// Validation is automatic via the pipeline behavior — this handler only runs
-/// when the query is valid.
+///    Handles <see cref="GetItemQuery" />.
+///    Validation is automatic via the pipeline behavior — this handler only runs
+///    when the query is valid.
 /// </summary>
 public sealed class GetItemQueryHandler(ItemService svc)
    : IRequestHandler<GetItemQuery, Result<ItemDto>>
 {
-   public Task<Result<ItemDto>> Handle(GetItemQuery query, CancellationToken ct) => svc.GetAsync(query.Id, ct);
+   public Task<Result<ItemDto>> Handle(GetItemQuery query, CancellationToken ct)
+   {
+      return svc.GetAsync(query.Id, ct);
+   }
 }
 
 /// <summary>
-/// Handles <see cref="DeleteItemCommand"/>.
-/// Validation is automatic via the pipeline behavior — this handler only runs
-/// when the command is valid.
+///    Handles <see cref="DeleteItemCommand" />.
+///    Validation is automatic via the pipeline behavior — this handler only runs
+///    when the command is valid.
 /// </summary>
 public sealed class DeleteItemCommandHandler(ItemService svc)
    : IRequestHandler<DeleteItemCommand, Result>
 {
-   public Task<Result> Handle(DeleteItemCommand cmd, CancellationToken ct) => svc.DeleteAsync(cmd.Id, ct);
+   public Task<Result> Handle(DeleteItemCommand cmd, CancellationToken ct)
+   {
+      return svc.DeleteAsync(cmd.Id, ct);
+   }
 }

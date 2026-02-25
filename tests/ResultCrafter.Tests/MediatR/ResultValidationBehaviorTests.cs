@@ -4,7 +4,6 @@ using MediatR;
 using ResultCrafter.Core.Primitives;
 using ResultCrafter.MediatR;
 
-
 namespace ResultCrafter.Tests.MediatR;
 
 public sealed class ResultValidationBehaviorTests
@@ -323,18 +322,22 @@ public sealed class ResultValidationBehaviorTests
 
    private sealed class TestQueryValidator : AbstractValidator<TestQuery>
    {
-      public TestQueryValidator() =>
+      public TestQueryValidator()
+      {
          RuleFor(x => x.Name)
             .NotEmpty()
             .WithMessage("Name is required.");
+      }
    }
 
    private sealed class TestQuerySecondaryValidator : AbstractValidator<TestQuery>
    {
-      public TestQuerySecondaryValidator() =>
+      public TestQuerySecondaryValidator()
+      {
          RuleFor(x => x.Name)
             .MinimumLength(4)
             .WithMessage("Name must be at least 4 characters.");
+      }
    }
 
    private sealed class MultiRuleValidator : AbstractValidator<TestQuery>

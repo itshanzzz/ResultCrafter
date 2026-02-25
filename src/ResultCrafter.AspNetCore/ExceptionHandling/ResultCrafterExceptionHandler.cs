@@ -30,8 +30,8 @@ public sealed class ResultCrafterExceptionHandler(
          // Log at warning so the gap is visible without alarming as an unhandled error.
          ResultCrafterLogger.LogResponseAlreadyStarted(
             logger,
-            httpMethod: httpContext.Request.Method,
-            path: httpContext.Request.Path.Value ?? string.Empty);
+            httpContext.Request.Method,
+            httpContext.Request.Path.Value ?? string.Empty);
 
          return false;
       }
@@ -52,12 +52,12 @@ public sealed class ResultCrafterExceptionHandler(
       ResultCrafterLogger.LogUnhandledException(
          logger,
          exception,
-         statusCode: status,
-         httpMethod: httpContext.Request.Method,
-         path: httpContext.Request.Path.Value ?? string.Empty,
-         instance: ProblemDetailsEnricher.GetInstance(httpContext),
-         traceId: ProblemDetailsEnricher.GetTraceId(httpContext),
-         requestId: httpContext.TraceIdentifier);
+         status,
+         httpContext.Request.Method,
+         httpContext.Request.Path.Value ?? string.Empty,
+         ProblemDetailsEnricher.GetInstance(httpContext),
+         ProblemDetailsEnricher.GetTraceId(httpContext),
+         httpContext.TraceIdentifier);
 
       var pd = new Microsoft.AspNetCore.Mvc.ProblemDetails
       {
@@ -80,8 +80,8 @@ public sealed class ResultCrafterExceptionHandler(
    }
 
    /// <summary>
-   /// Determines at startup whether this environment should expose exception details.
-   /// The single ToLowerInvariant() allocation happens once and is not on a hot path.
+   ///    Determines at startup whether this environment should expose exception details.
+   ///    The single ToLowerInvariant() allocation happens once and is not on a hot path.
    /// </summary>
    private static bool ComputeIsNonProd(IHostEnvironment env)
    {

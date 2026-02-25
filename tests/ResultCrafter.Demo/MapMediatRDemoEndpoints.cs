@@ -4,18 +4,17 @@ using ResultCrafter.AspNetCore.Endpoints;
 namespace ResultCrafter.Demo;
 
 /// <summary>
-/// Minimal API endpoints demonstrating ResultCrafter + MediatR + FluentValidation
-/// working together end-to-end.
-///
-/// The pipeline for each request:
-///   HTTP request
-///     → MediatR.Send()
-///     → ResultValidationBehavior / VoidResultValidationBehavior  (auto-validates)
-///         → 400 ProblemDetails if invalid  (behavior short-circuits here)
-///         → Handler.Handle()               (only reached when valid)
-///             → Result success/failure
-///     → .ToOkResult() / .ToNoContentResult()
-///     → HTTP response
+///    Minimal API endpoints demonstrating ResultCrafter + MediatR + FluentValidation
+///    working together end-to-end.
+///    The pipeline for each request:
+///    HTTP request
+///    → MediatR.Send()
+///    → ResultValidationBehavior / VoidResultValidationBehavior  (auto-validates)
+///    → 400 ProblemDetails if invalid  (behavior short-circuits here)
+///    → Handler.Handle()               (only reached when valid)
+///    → Result success/failure
+///    → .ToOkResult() / .ToNoContentResult()
+///    → HTTP response
 /// </summary>
 public static class MediatRDemoEndpoints
 {

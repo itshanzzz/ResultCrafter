@@ -33,7 +33,7 @@ public sealed class DependencyInjectionTests
       var services = BuildServices();
 
       var provider = services.BuildServiceProvider();
-      var marker   = provider.GetService<ResultCrafterMarker>();
+      var marker = provider.GetService<ResultCrafterMarker>();
 
       Assert.NotNull(marker);
    }
@@ -42,10 +42,11 @@ public sealed class DependencyInjectionTests
    public void AddResultCrafter_RegistersExceptionHandler()
    {
       // IHostEnvironment is required by ResultCrafterExceptionHandler — register a stub.
-      var services = BuildServices(withHostEnvironment: true);
+      var services = BuildServices(true);
 
       var provider = services.BuildServiceProvider();
-      var handlers = provider.GetServices<IExceptionHandler>().ToList();
+      var handlers = provider.GetServices<IExceptionHandler>()
+                             .ToList();
 
       Assert.NotEmpty(handlers);
    }
@@ -58,8 +59,7 @@ public sealed class DependencyInjectionTests
       var services = new ServiceCollection();
       services.AddLogging();
 
-      var ex = Assert.Throws<InvalidOperationException>(
-         () => services.AddResultCrafterEfCore());
+      var ex = Assert.Throws<InvalidOperationException>(() => services.AddResultCrafterEfCore());
 
       Assert.Contains("AddResultCrafter", ex.Message);
    }
@@ -77,11 +77,12 @@ public sealed class DependencyInjectionTests
    public void AddResultCrafterEfCore_RegistersTwoExceptionHandlers()
    {
       // IHostEnvironment is required by ResultCrafterExceptionHandler — register a stub.
-      var services = BuildServices(withHostEnvironment: true);
+      var services = BuildServices(true);
       services.AddResultCrafterEfCore();
 
       var provider = services.BuildServiceProvider();
-      var handlers = provider.GetServices<IExceptionHandler>().ToList();
+      var handlers = provider.GetServices<IExceptionHandler>()
+                             .ToList();
 
       // EfCore handler + generic 500 handler
       Assert.Equal(2, handlers.Count);
@@ -92,11 +93,10 @@ public sealed class DependencyInjectionTests
    [Fact]
    public async Task StartupValidator_WhenMiddlewareNotConfigured_Throws()
    {
-      var marker    = new ResultCrafterMarker(); // MiddlewareConfigured defaults to false
+      var marker = new ResultCrafterMarker(); // MiddlewareConfigured defaults to false
       var validator = new ResultCrafterStartupValidator(marker);
 
-      var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-         () => validator.StartAsync(CancellationToken.None));
+      var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => validator.StartAsync(CancellationToken.None));
 
       Assert.Contains("UseResultCrafter", ex.Message);
    }
@@ -104,7 +104,10 @@ public sealed class DependencyInjectionTests
    [Fact]
    public async Task StartupValidator_WhenMiddlewareIsConfigured_DoesNotThrow()
    {
-      var marker    = new ResultCrafterMarker { MiddlewareConfigured = true };
+      var marker = new ResultCrafterMarker
+      {
+         MiddlewareConfigured = true
+      };
       var validator = new ResultCrafterStartupValidator(marker);
 
       await validator.StartAsync(CancellationToken.None);
@@ -119,7 +122,9 @@ public sealed class DependencyInjectionTests
       services.AddResultCrafter();
 
       if (withHostEnvironment)
+      {
          services.AddSingleton<IHostEnvironment>(new StubHostEnvironment());
+      }
 
       return services;
    }

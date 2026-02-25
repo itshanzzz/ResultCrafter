@@ -7,10 +7,10 @@ namespace ResultCrafter.AspNetCore.EfCore;
 public static class ServiceCollectionExtensions
 {
    /// <summary>
-   /// Registers the ResultCrafter EF Core integration.
-   /// Intercepts <see cref="Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException"/>
-   /// and maps it to a <c>409 ConcurrencyConflict</c> ProblemDetails response.
-   /// Must be called after <see cref="DependencyInjection.ServiceCollectionExtensions.AddResultCrafter"/>.
+   ///    Registers the ResultCrafter EF Core integration.
+   ///    Intercepts <see cref="Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException" />
+   ///    and maps it to a <c>409 ConcurrencyConflict</c> ProblemDetails response.
+   ///    Must be called after <see cref="DependencyInjection.ServiceCollectionExtensions.AddResultCrafter" />.
    /// </summary>
    public static IServiceCollection AddResultCrafterEfCore(this IServiceCollection services)
    {
@@ -23,7 +23,8 @@ public static class ServiceCollectionExtensions
 
       if (handlerDescriptor is null)
       {
-         throw new InvalidOperationException("AddResultCrafterEfCore() requires AddResultCrafter() to be called first.");
+         throw new InvalidOperationException(
+            "AddResultCrafterEfCore() requires AddResultCrafter() to be called first.");
       }
 
       var idx = services.IndexOf(handlerDescriptor);

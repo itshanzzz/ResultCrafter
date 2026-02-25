@@ -5,10 +5,10 @@ using ResultCrafter.AspNetCore.Controllers;
 namespace ResultCrafter.Demo;
 
 /// <summary>
-/// MVC controller mirroring every scenario covered by <see cref="DemoEndpoints"/>.
-/// Demonstrates that ResultCrafter's controller integration produces the same
-/// RFC 9457 ProblemDetails responses, the same structured logging, and the same
-/// OpenAPI documentation as the Minimal API path — just with MVC attribute syntax.
+///    MVC controller mirroring every scenario covered by <see cref="DemoEndpoints" />.
+///    Demonstrates that ResultCrafter's controller integration produces the same
+///    RFC 9457 ProblemDetails responses, the same structured logging, and the same
+///    OpenAPI documentation as the Minimal API path — just with MVC attribute syntax.
 /// </summary>
 [ApiController]
 [Route("api/ctrl/items")]
@@ -21,8 +21,10 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [HttpGet("{id:int}")]
    [ProducesResponseType<ItemDto>(StatusCodes.Status200OK)]
    [ProducesNotFound]
-   public async Task<ActionResult<ItemDto>> Get(int id, CancellationToken ct) =>
-      (await svc.GetAsync(id, ct)).ToOkResult();
+   public async Task<ActionResult<ItemDto>> Get(int id, CancellationToken ct)
+   {
+      return (await svc.GetAsync(id, ct)).ToOkResult();
+   }
 
    // ── POST /api/ctrl/items ──────────────────────────────────────────────────
 
@@ -30,8 +32,10 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [HttpPost]
    [ProducesResponseType<ItemDto>(StatusCodes.Status201Created)]
    [ProducesBadRequest]
-   public async Task<ActionResult<ItemDto>> Create([FromBody] CreateItemRequest req, CancellationToken ct) =>
-      (await svc.CreateAsync(req, ct)).ToCreatedResult();
+   public async Task<ActionResult<ItemDto>> Create([FromBody] CreateItemRequest req, CancellationToken ct)
+   {
+      return (await svc.CreateAsync(req, ct)).ToCreatedResult();
+   }
 
    // ── PUT /api/ctrl/items/{id} ──────────────────────────────────────────────
 
@@ -41,8 +45,10 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [ProducesNotFound]
    [ProducesBadRequest]
    [ProducesConflict]
-   public async Task<ActionResult<ItemDto>> Update(int id, [FromBody] UpdateItemRequest req, CancellationToken ct) =>
-      (await svc.UpdateAsync(id, req, ct)).ToOkResult();
+   public async Task<ActionResult<ItemDto>> Update(int id, [FromBody] UpdateItemRequest req, CancellationToken ct)
+   {
+      return (await svc.UpdateAsync(id, req, ct)).ToOkResult();
+   }
 
    // ── DELETE /api/ctrl/items/{id} ───────────────────────────────────────────
 
@@ -50,8 +56,10 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [HttpDelete("{id:int}")]
    [ProducesResponseType(StatusCodes.Status204NoContent)]
    [ProducesNotFound]
-   public async Task<IActionResult> Delete(int id, CancellationToken ct) =>
-      (await svc.DeleteAsync(id, ct)).ToNoContentResult();
+   public async Task<IActionResult> Delete(int id, CancellationToken ct)
+   {
+      return (await svc.DeleteAsync(id, ct)).ToNoContentResult();
+   }
 
    // ── POST /api/ctrl/items/{id}/reserve ─────────────────────────────────────
 
@@ -60,8 +68,10 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [ProducesResponseType<ItemDto>(StatusCodes.Status202Accepted)]
    [ProducesNotFound]
    [ProducesForbidden]
-   public async Task<ActionResult<ItemDto>> Reserve(int id, CancellationToken ct) =>
-      (await svc.ReserveAsync(id, ct)).ToAcceptedResult();
+   public async Task<ActionResult<ItemDto>> Reserve(int id, CancellationToken ct)
+   {
+      return (await svc.ReserveAsync(id, ct)).ToAcceptedResult();
+   }
 
    // ── POST /api/ctrl/items/bulk-delete ──────────────────────────────────────
 
@@ -69,14 +79,16 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [HttpPost("bulk-delete")]
    [ProducesResponseType(StatusCodes.Status202Accepted)]
    [ProducesBadRequest]
-   public async Task<IActionResult> BulkDelete([FromBody] BulkDeleteRequest req, CancellationToken ct) =>
-      (await svc.BulkDeleteAsync(req, ct)).ToAcceptedResult();
+   public async Task<IActionResult> BulkDelete([FromBody] BulkDeleteRequest req, CancellationToken ct)
+   {
+      return (await svc.BulkDeleteAsync(req, ct)).ToAcceptedResult();
+   }
 
    // ── GET /api/ctrl/items/admin ─────────────────────────────────────────────
 
    /// <summary>
-   /// Admin list — 200 Ok, 401 Unauthorized (missing key), or 403 Forbidden (non-admin role).
-   /// Pass headers:  X-Api-Key: any-value   X-Role: admin
+   ///    Admin list — 200 Ok, 401 Unauthorized (missing key), or 403 Forbidden (non-admin role).
+   ///    Pass headers:  X-Api-Key: any-value   X-Role: admin
    /// </summary>
    [HttpGet("admin")]
    [ProducesResponseType<List<ItemDto>>(StatusCodes.Status200OK)]
@@ -84,14 +96,16 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    [ProducesForbidden]
    public async Task<ActionResult<List<ItemDto>>> AdminList([FromHeader(Name = "X-Api-Key")] string? apiKey,
       [FromHeader(Name = "X-Role")] string? role,
-      CancellationToken ct) =>
-      (await svc.GetAllAdminAsync(apiKey, role, ct)).ToOkResult();
+      CancellationToken ct)
+   {
+      return (await svc.GetAllAdminAsync(apiKey, role, ct)).ToOkResult();
+   }
 
    // ── Crash demos ───────────────────────────────────────────────────────────
 
    /// <summary>
-   /// Throws an unhandled <see cref="InvalidOperationException"/> to demonstrate the
-   /// 500 <c>IExceptionHandler</c> path — same handler as Minimal API.
+   ///    Throws an unhandled <see cref="InvalidOperationException" /> to demonstrate the
+   ///    500 <c>IExceptionHandler</c> path — same handler as Minimal API.
    /// </summary>
    [HttpGet("crash")]
    public IActionResult Crash()
@@ -101,9 +115,9 @@ public sealed class ItemsController(ItemService svc) : ControllerBase
    }
 
    /// <summary>
-   /// Throws <see cref="DbUpdateConcurrencyException"/> to demonstrate the EF Core
-   /// integration intercepting it as a 409 ConcurrencyConflict ProblemDetails response
-   /// before it reaches the generic 500 handler.
+   ///    Throws <see cref="DbUpdateConcurrencyException" /> to demonstrate the EF Core
+   ///    integration intercepting it as a 409 ConcurrencyConflict ProblemDetails response
+   ///    before it reaches the generic 500 handler.
    /// </summary>
    [HttpGet("db-crash")]
    public IActionResult DbCrash()

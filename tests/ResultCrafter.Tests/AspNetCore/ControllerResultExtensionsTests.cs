@@ -290,7 +290,8 @@ public sealed class ControllerResultExtensionsTests
    [Fact]
    public void ToProblemResult_ReturnsProblemActionResult()
    {
-      var action = Error.NotFound().ToProblemResult();
+      var action = Error.NotFound()
+                        .ToProblemResult();
       Assert.IsType<ProblemActionResult>(action);
    }
 
@@ -303,7 +304,8 @@ public sealed class ControllerResultExtensionsTests
    [InlineData(ErrorType.ConcurrencyConflict)]
    public void ToProblemResult_AnyErrorType_ReturnsProblemActionResult(ErrorType type)
    {
-      var action = BuildError(type).ToProblemResult();
+      var action = BuildError(type)
+         .ToProblemResult();
       Assert.IsType<ProblemActionResult>(action);
    }
 
@@ -319,7 +321,10 @@ public sealed class ControllerResultExtensionsTests
    [Fact]
    public void ToProblemResult_ValidationError_CarriesFieldErrors()
    {
-      var errors = new Dictionary<string, string[]> { ["email"] = ["Required."] };
+      var errors = new Dictionary<string, string[]>
+      {
+         ["email"] = ["Required."]
+      };
       var error = Error.BadRequest(errors);
       var action = error.ToProblemResult();
       var problem = Assert.IsType<ProblemActionResult>(action);
@@ -348,15 +353,17 @@ public sealed class ControllerResultExtensionsTests
 
    // ── Helpers ────────────────────────────────────────────────────────────────
 
-   private static Error BuildError(ErrorType type) =>
-      type switch
+   private static Error BuildError(ErrorType type)
+   {
+      return type switch
       {
-         ErrorType.BadRequest          => Error.BadRequest("detail"),
-         ErrorType.NotFound            => Error.NotFound("detail"),
-         ErrorType.Conflict            => Error.Conflict("detail"),
-         ErrorType.Unauthorized        => Error.Unauthorized("detail"),
-         ErrorType.Forbidden           => Error.Forbidden("detail"),
+         ErrorType.BadRequest => Error.BadRequest("detail"),
+         ErrorType.NotFound => Error.NotFound("detail"),
+         ErrorType.Conflict => Error.Conflict("detail"),
+         ErrorType.Unauthorized => Error.Unauthorized("detail"),
+         ErrorType.Forbidden => Error.Forbidden("detail"),
          ErrorType.ConcurrencyConflict => Error.ConcurrencyConflict("detail"),
-         _                             => Error.BadRequest("fallback")
+         _ => Error.BadRequest("fallback")
       };
+   }
 }

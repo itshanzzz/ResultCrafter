@@ -6,12 +6,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MediatR" Version="12.5.0" />
-        <PackageReference Include="FluentValidation" Version="12.1.1" />
+        <PackageReference Include="MediatR" Version="12.5.0"/>
+        <PackageReference Include="FluentValidation" Version="12.1.1"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ResultCrafter.Core\ResultCrafter.Core.csproj" />
+        <ProjectReference Include="..\ResultCrafter.Core\ResultCrafter.Core.csproj"/>
     </ItemGroup>
 
 </Project>

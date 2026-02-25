@@ -6,26 +6,6 @@ namespace ResultCrafter.Tests.FluentValidation;
 
 public sealed class ValidatorExtensionsTests
 {
-   // ── Fixture ────────────────────────────────────────────────────────────────
-
-   private sealed record CreateOrderRequest(string? CustomerEmail, int Quantity);
-
-   private sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
-   {
-      public CreateOrderRequestValidator()
-      {
-         RuleFor(x => x.CustomerEmail)
-            .NotEmpty()
-            .WithMessage("Email is required.")
-            .EmailAddress()
-            .WithMessage("Email must be a valid address.");
-
-         RuleFor(x => x.Quantity)
-            .GreaterThan(0)
-            .WithMessage("Quantity must be greater than 0.");
-      }
-   }
-
    private readonly IValidator<CreateOrderRequest> _validator = new CreateOrderRequestValidator();
 
    // ── Valid input ────────────────────────────────────────────────────────────
@@ -132,5 +112,24 @@ public sealed class ValidatorExtensionsTests
       await cts.CancelAsync();
 
       await Assert.ThrowsAsync<OperationCanceledException>(() => _validator.ValidateToResultAsync(request, cts.Token));
+   }
+   // ── Fixture ────────────────────────────────────────────────────────────────
+
+   private sealed record CreateOrderRequest(string? CustomerEmail, int Quantity);
+
+   private sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
+   {
+      public CreateOrderRequestValidator()
+      {
+         RuleFor(x => x.CustomerEmail)
+            .NotEmpty()
+            .WithMessage("Email is required.")
+            .EmailAddress()
+            .WithMessage("Email must be a valid address.");
+
+         RuleFor(x => x.Quantity)
+            .GreaterThan(0)
+            .WithMessage("Quantity must be greater than 0.");
+      }
    }
 }

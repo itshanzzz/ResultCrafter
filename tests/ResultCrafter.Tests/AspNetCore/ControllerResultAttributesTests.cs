@@ -28,9 +28,9 @@ public sealed class ControllerResultAttributesTests
    public void ProducesBadRequest_AllowsMultipleUsages()
    {
       var usage = typeof(ProducesBadRequestAttribute)
-         .GetCustomAttributes(typeof(AttributeUsageAttribute), inherit: false)
-         .Cast<AttributeUsageAttribute>()
-         .Single();
+                  .GetCustomAttributes(typeof(AttributeUsageAttribute), false)
+                  .Cast<AttributeUsageAttribute>()
+                  .Single();
 
       Assert.True(usage.AllowMultiple);
    }
@@ -57,9 +57,9 @@ public sealed class ControllerResultAttributesTests
    public void ProducesUnauthorized_AllowsMultipleUsages()
    {
       var usage = typeof(ProducesUnauthorizedAttribute)
-         .GetCustomAttributes(typeof(AttributeUsageAttribute), inherit: false)
-         .Cast<AttributeUsageAttribute>()
-         .Single();
+                  .GetCustomAttributes(typeof(AttributeUsageAttribute), false)
+                  .Cast<AttributeUsageAttribute>()
+                  .Single();
 
       Assert.True(usage.AllowMultiple);
    }
@@ -86,9 +86,9 @@ public sealed class ControllerResultAttributesTests
    public void ProducesForbidden_AllowsMultipleUsages()
    {
       var usage = typeof(ProducesForbiddenAttribute)
-         .GetCustomAttributes(typeof(AttributeUsageAttribute), inherit: false)
-         .Cast<AttributeUsageAttribute>()
-         .Single();
+                  .GetCustomAttributes(typeof(AttributeUsageAttribute), false)
+                  .Cast<AttributeUsageAttribute>()
+                  .Single();
 
       Assert.True(usage.AllowMultiple);
    }
@@ -115,9 +115,9 @@ public sealed class ControllerResultAttributesTests
    public void ProducesNotFound_AllowsMultipleUsages()
    {
       var usage = typeof(ProducesNotFoundAttribute)
-         .GetCustomAttributes(typeof(AttributeUsageAttribute), inherit: false)
-         .Cast<AttributeUsageAttribute>()
-         .Single();
+                  .GetCustomAttributes(typeof(AttributeUsageAttribute), false)
+                  .Cast<AttributeUsageAttribute>()
+                  .Single();
 
       Assert.True(usage.AllowMultiple);
    }
@@ -144,9 +144,9 @@ public sealed class ControllerResultAttributesTests
    public void ProducesConflict_AllowsMultipleUsages()
    {
       var usage = typeof(ProducesConflictAttribute)
-         .GetCustomAttributes(typeof(AttributeUsageAttribute), inherit: false)
-         .Cast<AttributeUsageAttribute>()
-         .Single();
+                  .GetCustomAttributes(typeof(AttributeUsageAttribute), false)
+                  .Cast<AttributeUsageAttribute>()
+                  .Single();
 
       Assert.True(usage.AllowMultiple);
    }
@@ -181,9 +181,9 @@ public sealed class ControllerResultAttributesTests
    public void AllAttributes_TargetMethods(Type attributeType)
    {
       var usage = attributeType
-         .GetCustomAttributes(typeof(AttributeUsageAttribute), inherit: false)
-         .Cast<AttributeUsageAttribute>()
-         .Single();
+                  .GetCustomAttributes(typeof(AttributeUsageAttribute), false)
+                  .Cast<AttributeUsageAttribute>()
+                  .Single();
 
       Assert.True(
          (usage.ValidOn & AttributeTargets.Method) != 0,

@@ -35,7 +35,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Pandatech.Analyzers" Version="[2.1.0]" PrivateAssets="all" />
+        <PackageReference Include="Pandatech.Analyzers" Version="[2.1.0]" PrivateAssets="all"/>
         <PackageReference Include="SonarAnalyzer.CSharp" Version="[10.19.0.132793]">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -44,7 +44,7 @@
 
     <!-- Pack shared assets for all packable projects -->
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
-        <None Include="$(MSBuildThisFileDirectory)ResultCrafterLogo.png" Pack="true" PackagePath="\" />
-        <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+        <None Include="$(MSBuildThisFileDirectory)ResultCrafterLogo.png" Pack="true" PackagePath="\"/>
+        <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 </Project>

@@ -7,20 +7,26 @@ using ResultCrafter.AspNetCore.ProblemDetails;
 namespace ResultCrafter.AspNetCore.DependencyInjection;
 
 /// <summary>
-/// Registered as <see cref="IPostConfigureOptions{TOptions}"/> so our customisation
-/// runs after any user-supplied <c>AddProblemDetails(o =&gt; …)</c> calls, then chains
-/// the callbacks rather than replacing them.
+///    Registered as <see cref="IPostConfigureOptions{TOptions}" /> so our customisation
+///    runs after any user-supplied <c>AddProblemDetails(o =&gt; …)</c> calls, then chains
+///    the callbacks rather than replacing them.
 /// </summary>
 /// <remarks>
-/// Responsibilities:
-/// <list type="bullet">
-///   <item>Enriches every ProblemDetails response with <c>instance</c>, <c>requestId</c>,
-///         and <c>traceId</c> via <see cref="ProblemDetailsEnricher"/>.</item>
-///   <item>Logs <c>4xx</c> client errors produced by ResultCrafter at the level
-///         configured via <see cref="ResultCrafterOptions.ClientErrorLogLevel"/>.</item>
-///   <item>Strips internal <c>x-rc</c> and <c>x-rc-error-id</c> marker extensions
-///         before the response body is serialised to the client.</item>
-/// </list>
+///    Responsibilities:
+///    <list type="bullet">
+///       <item>
+///          Enriches every ProblemDetails response with <c>instance</c>, <c>requestId</c>,
+///          and <c>traceId</c> via <see cref="ProblemDetailsEnricher" />.
+///       </item>
+///       <item>
+///          Logs <c>4xx</c> client errors produced by ResultCrafter at the level
+///          configured via <see cref="ResultCrafterOptions.ClientErrorLogLevel" />.
+///       </item>
+///       <item>
+///          Strips internal <c>x-rc</c> and <c>x-rc-error-id</c> marker extensions
+///          before the response body is serialised to the client.
+///       </item>
+///    </list>
 /// </remarks>
 internal sealed class ConfigureResultCrafterProblemDetails(
    ILogger<ConfigureResultCrafterProblemDetails> logger,
@@ -40,7 +46,7 @@ internal sealed class ConfigureResultCrafterProblemDetails(
          ProblemDetailsEnricher.Enrich(ctx.ProblemDetails, ctx.HttpContext);
 
          var status = ctx.ProblemDetails.Status ?? 0;
-         var ext    = ctx.ProblemDetails.Extensions;
+         var ext = ctx.ProblemDetails.Extensions;
 
          var isRc = ext.TryGetValue(ProblemDetailsKeys.RcMarker, out var marker) && marker is true;
 
@@ -59,22 +65,24 @@ internal sealed class ConfigureResultCrafterProblemDetails(
 
                ResultCrafterLogger.LogClientError(
                   logger,
-                  level: level,
-                  statusCode: status,
-                  title: ctx.ProblemDetails.Title,
-                  detail: ctx.ProblemDetails.Detail,
-                  errorId: errorId ?? string.Empty,
-                  httpMethod: ctx.HttpContext.Request.Method,
-                  path: ctx.HttpContext.Request.Path.Value ?? string.Empty,
-                  instance: ProblemDetailsEnricher.GetInstance(ctx.HttpContext),
-                  traceId: ProblemDetailsEnricher.GetTraceId(ctx.HttpContext),
-                  requestId: ctx.HttpContext.TraceIdentifier);
+                  level,
+                  status,
+                  ctx.ProblemDetails.Title,
+                  ctx.ProblemDetails.Detail,
+                  errorId ?? string.Empty,
+                  ctx.HttpContext.Request.Method,
+                  ctx.HttpContext.Request.Path.Value ?? string.Empty,
+                  ProblemDetailsEnricher.GetInstance(ctx.HttpContext),
+                  ProblemDetailsEnricher.GetTraceId(ctx.HttpContext),
+                  ctx.HttpContext.TraceIdentifier);
             }
          }
 
          // ── Strip internal marker extensions before the response is sent ──
          if (!isRc)
+         {
             return;
+         }
 
          ext.Remove(ProblemDetailsKeys.RcMarker);
          ext.Remove(ProblemDetailsKeys.RcErrorId);

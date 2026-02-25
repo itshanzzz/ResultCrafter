@@ -3,21 +3,21 @@
 namespace ResultCrafter.AspNetCore.ProblemDetails;
 
 /// <summary>
-/// Constructs <see cref="Microsoft.AspNetCore.Mvc.ProblemDetails"/> instances from
-/// <see cref="Error"/> values, centralising status-code mapping, title resolution,
-/// detail fallback, and internal marker extension population.
+///    Constructs <see cref="Microsoft.AspNetCore.Mvc.ProblemDetails" /> instances from
+///    <see cref="Error" /> values, centralising status-code mapping, title resolution,
+///    detail fallback, and internal marker extension population.
 /// </summary>
 /// <remarks>
-/// The <c>x-rc</c> and <c>x-rc-error-id</c> extension keys are stripped from the
-/// serialised response by <c>ConfigureResultCrafterProblemDetails</c> before the
-/// body is written to the client.
+///    The <c>x-rc</c> and <c>x-rc-error-id</c> extension keys are stripped from the
+///    serialised response by <c>ConfigureResultCrafterProblemDetails</c> before the
+///    body is written to the client.
 /// </remarks>
 public static class ProblemDetailsBuilder
 {
    /// <summary>
-   /// Builds a <see cref="Microsoft.AspNetCore.Mvc.ProblemDetails"/> from <paramref name="error"/>.
-   /// The returned object is ready to be passed to <c>IProblemDetailsService.TryWriteAsync</c>
-   /// or converted to a <c>ProblemHttpResult</c> via <c>TypedResults.Problem</c>.
+   ///    Builds a <see cref="Microsoft.AspNetCore.Mvc.ProblemDetails" /> from <paramref name="error" />.
+   ///    The returned object is ready to be passed to <c>IProblemDetailsService.TryWriteAsync</c>
+   ///    or converted to a <c>ProblemHttpResult</c> via <c>TypedResults.Problem</c>.
    /// </summary>
    public static Microsoft.AspNetCore.Mvc.ProblemDetails Build(Error error)
    {

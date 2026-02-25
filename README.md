@@ -590,7 +590,8 @@ public sealed class CancelOrderHandler : IRequestHandler<CancelOrderCommand, Res
 
 ### Behavior notes
 
-- Validators run sequentially (intentionally safe for validators that depend on non-thread-safe services like EF Core `DbContext`).
+- Validators run sequentially (intentionally safe for validators that depend on non-thread-safe services like EF Core
+  `DbContext`).
 - All validator failures are aggregated into one response.
 - Handlers with no registered validators are a pass-through with effectively zero overhead beyond pipeline dispatch.
 

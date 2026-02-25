@@ -9,13 +9,13 @@ namespace ResultCrafter.AspNetCore.DependencyInjection;
 public static class ServiceCollectionExtensions
 {
    /// <summary>
-   /// Registers ResultCrafter services:
-   /// <list type="bullet">
-   ///   <item>RFC 9457 ProblemDetails with automatic enrichment and 4xx structured logging.</item>
-   ///   <item><see cref="ResultCrafterExceptionHandler"/> for unhandled 5xx exceptions.</item>
-   /// </list>
-   /// Call <see cref="ApplicationBuilderExtensions.UseResultCrafter"/> in your middleware
-   /// pipeline after calling this method.
+   ///    Registers ResultCrafter services:
+   ///    <list type="bullet">
+   ///       <item>RFC 9457 ProblemDetails with automatic enrichment and 4xx structured logging.</item>
+   ///       <item><see cref="ResultCrafterExceptionHandler" /> for unhandled 5xx exceptions.</item>
+   ///    </list>
+   ///    Call <see cref="ApplicationBuilderExtensions.UseResultCrafter" /> in your middleware
+   ///    pipeline after calling this method.
    /// </summary>
    public static IServiceCollection AddResultCrafter(this IServiceCollection services,
       Action<ResultCrafterOptions>? configure = null)
