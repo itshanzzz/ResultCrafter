@@ -1,14 +1,11 @@
+using System.Collections.ObjectModel;
+
 namespace ResultCrafter.Core.Primitives;
 
 /// <summary>
 ///    An immutable, typed error value. Carry one through a <see cref="Result{T}" /> or
 ///    <see cref="Result" /> rather than throwing exceptions for expected failure paths.
 /// </summary>
-/// <remarks>
-///    All factory methods enforce the minimum data contract for each error type.
-///    <see cref="BadRequest(Dictionary{string,string[]},string?)" /> requires a field-errors
-///    dictionary; <see cref="BadRequest(string)" /> requires a prose detail message.
-/// </remarks>
 public readonly struct Error : IEquatable<Error>
 {
    /// <summary>The category of this error. Determines the HTTP status code and ProblemDetails title.</summary>
@@ -28,14 +25,11 @@ public readonly struct Error : IEquatable<Error>
    public IReadOnlyDictionary<string, string[]>? Errors { get; }
 
    /// <summary>
-   ///    <see langword="true" /> when this error carries a field-level <see cref="Errors" />
-   ///    dictionary (i.e. was constructed via
-   ///    <see cref="BadRequest(Dictionary{string,string[]},string?)" />).
-   ///    The HTTP response will include an <c>errors</c> extension containing the dictionary.
+   ///    <see langword="true" /> when this error carries a field-level <see cref="Errors" /> dictionary.
    /// </summary>
    public bool IsValidation => Errors is not null;
 
-   private Error(ErrorType type, string? detail, Dictionary<string, string[]>? errors)
+   private Error(ErrorType type, string? detail, IReadOnlyDictionary<string, string[]>? errors)
    {
       Type = type;
       Detail = detail;
@@ -44,65 +38,44 @@ public readonly struct Error : IEquatable<Error>
 
    // ── Simple errors ─────────────────────────────────────────────────────────
 
-   /// <summary>Creates a <see cref="ErrorType.NotFound" /> error (HTTP 404).</summary>
-   public static Error NotFound(string? detail = null)
-   {
-      return new Error(ErrorType.NotFound, detail, null);
-   }
-
-   /// <summary>Creates an <see cref="ErrorType.Unauthorized" /> error (HTTP 401).</summary>
-   public static Error Unauthorized(string? detail = null)
-   {
-      return new Error(ErrorType.Unauthorized, detail, null);
-   }
-
-   /// <summary>Creates a <see cref="ErrorType.Forbidden" /> error (HTTP 403).</summary>
-   public static Error Forbidden(string? detail = null)
-   {
-      return new Error(ErrorType.Forbidden, detail, null);
-   }
-
-   /// <summary>Creates a <see cref="ErrorType.Conflict" /> error (HTTP 409).</summary>
-   public static Error Conflict(string? detail = null)
-   {
-      return new Error(ErrorType.Conflict, detail, null);
-   }
-
-   /// <summary>
-   ///    Creates a <see cref="ErrorType.ConcurrencyConflict" /> error (HTTP 409).
-   ///    Use this instead of <see cref="Conflict" /> when the conflict is specifically
-   ///    an optimistic-concurrency token mismatch.
-   /// </summary>
-   public static Error ConcurrencyConflict(string? detail = null)
-   {
-      return new Error(ErrorType.ConcurrencyConflict, detail, null);
-   }
+   public static Error NotFound(string? detail = null) => new(ErrorType.NotFound, detail, null);
+   public static Error Unauthorized(string? detail = null) => new(ErrorType.Unauthorized, detail, null);
+   public static Error Forbidden(string? detail = null) => new(ErrorType.Forbidden, detail, null);
+   public static Error Conflict(string? detail = null) => new(ErrorType.Conflict, detail, null);
+   public static Error ConcurrencyConflict(string? detail = null) => new(ErrorType.ConcurrencyConflict, detail, null);
 
    // ── BadRequest ────────────────────────────────────────────────────────────
 
-   /// <summary>
-   ///    Creates a <see cref="ErrorType.BadRequest" /> error (HTTP 400) with a prose reason.
-   /// </summary>
-   /// <param name="detail">Required human-readable reason for the rejection.</param>
    public static Error BadRequest(string detail)
    {
+      ArgumentException.ThrowIfNullOrWhiteSpace(detail);
       return new Error(ErrorType.BadRequest, detail, null);
    }
 
    /// <summary>
-   ///    Creates a <see cref="ErrorType.BadRequest" /> error (HTTP 400) with field-level
-   ///    validation errors. The response includes an <c>errors</c> extension containing the
-   ///    field dictionary — matching the shape consumers already expect from ASP.NET Core
-   ///    model validation responses.
+   ///    Creates a <see cref="ErrorType.BadRequest" /> error (HTTP 400) with field-level validation errors.
+   ///    The passed dictionary and arrays are defensively copied.
    /// </summary>
-   /// <param name="errors">
-   ///    Field-level errors keyed by field name (e.g. <c>"email"</c>),
-   ///    each with one or more error messages.
-   /// </param>
-   /// <param name="detail">Optional summary. Defaults to a catalog value when <see langword="null" />.</param>
    public static Error BadRequest(Dictionary<string, string[]> errors, string? detail = null)
    {
-      return new Error(ErrorType.BadRequest, detail, errors);
+      ArgumentNullException.ThrowIfNull(errors);
+
+      if (errors.Count == 0)
+      {
+         throw new ArgumentException("BadRequest(errors) requires at least one field error.", nameof(errors));
+      }
+
+      // Copy + normalize keys to case-insensitive (matches how validators aggregate).
+      var copy = new Dictionary<string, string[]>(errors.Count, StringComparer.OrdinalIgnoreCase);
+
+      foreach (var (key, value) in errors)
+      {
+         ArgumentException.ThrowIfNullOrWhiteSpace(key);
+         // Clone array so caller can't mutate after creating Error.
+         copy[key] = value.Length == 0 ? [] : (string[])value.Clone();
+      }
+
+      return new Error(ErrorType.BadRequest, detail, new ReadOnlyDictionary<string, string[]>(copy));
    }
 
    // ── Equality ──────────────────────────────────────────────────────────────
@@ -111,37 +84,104 @@ public readonly struct Error : IEquatable<Error>
    public bool Equals(Error other)
    {
       return Type == other.Type &&
-             Detail == other.Detail &&
-             Equals(Errors, other.Errors);
+             string.Equals(Detail, other.Detail, StringComparison.Ordinal) &&
+             ErrorsEqual(Errors, other.Errors);
    }
 
    /// <inheritdoc />
-   public override bool Equals(object? obj)
-   {
-      return obj is Error other && Equals(other);
-   }
+   public override bool Equals(object? obj) => obj is Error other && Equals(other);
 
    /// <inheritdoc />
    public override int GetHashCode()
    {
-      return HashCode.Combine(Type, Detail);
+      unchecked
+      {
+         var hash = 17;
+         hash = hash * 31 + (int)Type;
+         hash = hash * 31 + (Detail is null ? 0 : StringComparer.Ordinal.GetHashCode(Detail));
+
+         if (Errors is null)
+         {
+            return hash;
+         }
+
+         hash = hash * 31 + Errors.Count;
+
+         var entriesHash = 0;
+         foreach (var (key, values) in Errors)
+         {
+            var entry = HashCode.Combine(
+               StringComparer.OrdinalIgnoreCase.GetHashCode(key),
+               values.Length);
+
+            entry = values.Aggregate(entry,
+               (current, v) => HashCode.Combine(current, StringComparer.Ordinal.GetHashCode(v)));
+
+            // Use addition instead of XOR — avoids self-cancellation of duplicate entries
+            entriesHash += entry;
+         }
+
+         hash = hash * 31 + entriesHash;
+
+         return hash;
+      }
+   }
+
+   public static bool operator ==(Error left, Error right) => left.Equals(right);
+   public static bool operator !=(Error left, Error right) => !left.Equals(right);
+
+   private static bool ErrorsEqual(IReadOnlyDictionary<string, string[]>? a,
+      IReadOnlyDictionary<string, string[]>? b)
+   {
+      if (ReferenceEquals(a, b))
+      {
+         return true;
+      }
+
+      if (a is null || b is null || a.Count != b.Count)
+      {
+         return false;
+      }
+
+      foreach (var (key, aValues) in a)
+      {
+         if (!b.TryGetValue(key, out var bValues))
+         {
+            return false;
+         }
+
+         if (!ArrayEquals(aValues, bValues))
+         {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   private static bool ArrayEquals(string[]? a, string[]? b)
+   {
+      if (ReferenceEquals(a, b))
+      {
+         return true;
+      }
+
+      if (a is null || b is null || a.Length != b.Length)
+      {
+         return false;
+      }
+
+      for (var i = 0; i < a.Length; i++)
+      {
+         if (!string.Equals(a[i], b[i], StringComparison.Ordinal))
+         {
+            return false;
+         }
+      }
+
+      return true;
    }
 
    /// <inheritdoc />
-   public static bool operator ==(Error left, Error right)
-   {
-      return left.Equals(right);
-   }
-
-   /// <inheritdoc />
-   public static bool operator !=(Error left, Error right)
-   {
-      return !left.Equals(right);
-   }
-
-   /// <inheritdoc />
-   public override string ToString()
-   {
-      return Detail is not null ? $"{Type}: {Detail}" : Type.ToString();
-   }
+   public override string ToString() => Detail is not null ? $"{Type}: {Detail}" : Type.ToString();
 }

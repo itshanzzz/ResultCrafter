@@ -29,79 +29,73 @@ public static class ControllerResultExtensions
       return new ProblemActionResult(error);
    }
 
-   extension<T>(Result<T> result)
+   /// <summary>
+   ///    Maps a <see cref="Result{T}" /> to <c>200 Ok</c> on success or
+   ///    <c>ProblemDetails</c> on failure.
+   /// </summary>
+   public static ActionResult<T> ToOkResult<T>(this Result<T> result)
    {
-      /// <summary>
-      ///    Maps a <see cref="Result{T}" /> to <c>200 Ok</c> on success or
-      ///    <c>ProblemDetails</c> on failure.
-      /// </summary>
-      public ActionResult<T> ToOkResult()
-      {
-         return result.IsSuccess
-            ? new OkObjectResult(result.Value!)
-            : new ProblemActionResult(result.Error!.Value);
-      }
-
-      /// <summary>
-      ///    Maps a <see cref="Result{T}" /> to <c>201 Created</c> on success or
-      ///    <c>ProblemDetails</c> on failure.
-      /// </summary>
-      /// <remarks>
-      ///    The result must have been constructed via <see cref="Result{T}.Created" />;
-      ///    calling this on an <c>Ok</c> or <c>Accepted</c> result is a programming error
-      ///    and will throw <see cref="InvalidOperationException" />.
-      /// </remarks>
-      public ActionResult<T> ToCreatedResult()
-      {
-         if (!result.IsSuccess)
-         {
-            return new ProblemActionResult(result.Error!.Value);
-         }
-
-         if (result.Kind != SuccessKind.Created || result.Location is null)
-         {
-            throw new InvalidOperationException(
-               $"ToCreatedResult requires a Result<T> constructed via Result<T>.Created(string, T). " +
-               $"Got Kind={result.Kind}, Location={(result.Location is null ? "null" : $"{result.Location}")}.");
-         }
-
-         return new CreatedResult(result.Location, result.Value!);
-      }
-
-      /// <summary>
-      ///    Maps a <see cref="Result{T}" /> to <c>202 Accepted</c> on success or
-      ///    <c>ProblemDetails</c> on failure.
-      /// </summary>
-      public ActionResult<T> ToAcceptedResult()
-      {
-         return result.IsSuccess
-            ? new AcceptedResult(result.Location, result.Value!)
-            : new ProblemActionResult(result.Error!.Value);
-      }
+      return result.IsSuccess
+         ? new OkObjectResult(result.Value!)
+         : new ProblemActionResult(result.Error!.Value);
    }
 
-   extension(Result result)
+   /// <summary>
+   ///    Maps a <see cref="Result{T}" /> to <c>201 Created</c> on success or
+   ///    <c>ProblemDetails</c> on failure.
+   /// </summary>
+   /// <remarks>
+   ///    The result must have been constructed via <see cref="Result{T}.Created" />;
+   ///    calling this on an <c>Ok</c> or <c>Accepted</c> result is a programming error
+   ///    and will throw <see cref="InvalidOperationException" />.
+   /// </remarks>
+   public static ActionResult<T> ToCreatedResult<T>(this Result<T> result)
    {
-      /// <summary>
-      ///    Maps a void <see cref="Result" /> to <c>204 NoContent</c> on success or
-      ///    <c>ProblemDetails</c> on failure.
-      /// </summary>
-      public IActionResult ToNoContentResult()
+      if (!result.IsSuccess)
       {
-         return result.IsSuccess
-            ? new NoContentResult()
-            : new ProblemActionResult(result.Error!.Value);
+         return new ProblemActionResult(result.Error!.Value);
       }
 
-      /// <summary>
-      ///    Maps a void <see cref="Result" /> to <c>202 Accepted</c> on success or
-      ///    <c>ProblemDetails</c> on failure.
-      /// </summary>
-      public IActionResult ToAcceptedResult()
+      if (result.Kind != SuccessKind.Created || result.Location is null)
       {
-         return result.IsSuccess
-            ? new AcceptedResult(result.AcceptedLocation, null)
-            : new ProblemActionResult(result.Error!.Value);
+         throw new InvalidOperationException(
+            $"ToCreatedResult requires a Result<T> constructed via Result<T>.Created(string, T). " +
+            $"Got Kind={result.Kind}, Location={(result.Location is null ? "null" : $"{result.Location}")}.");
       }
+
+      return new CreatedResult(result.Location, result.Value!);
+   }
+
+   /// <summary>
+   ///    Maps a <see cref="Result{T}" /> to <c>202 Accepted</c> on success or
+   ///    <c>ProblemDetails</c> on failure.
+   /// </summary>
+   public static ActionResult<T> ToAcceptedResult<T>(this Result<T> result)
+   {
+      return result.IsSuccess
+         ? new AcceptedResult(result.Location, result.Value!)
+         : new ProblemActionResult(result.Error!.Value);
+   }
+
+   /// <summary>
+   ///    Maps a void <see cref="Result" /> to <c>204 NoContent</c> on success or
+   ///    <c>ProblemDetails</c> on failure.
+   /// </summary>
+   public static IActionResult ToNoContentResult(this Result result)
+   {
+      return result.IsSuccess
+         ? new NoContentResult()
+         : new ProblemActionResult(result.Error!.Value);
+   }
+
+   /// <summary>
+   ///    Maps a void <see cref="Result" /> to <c>202 Accepted</c> on success or
+   ///    <c>ProblemDetails</c> on failure.
+   /// </summary>
+   public static IActionResult ToAcceptedResult(this Result result)
+   {
+      return result.IsSuccess
+         ? new AcceptedResult(result.AcceptedLocation, null)
+         : new ProblemActionResult(result.Error!.Value);
    }
 }

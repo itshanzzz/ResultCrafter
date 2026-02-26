@@ -172,4 +172,39 @@ public sealed class ErrorTests
       var error = Error.NotFound();
       Assert.Equal("NotFound", error.ToString());
    }
+   
+   [Fact]
+   public void Equality_ValidationErrorsWithSameContent_AreEqual()
+   {
+      var a = Error.BadRequest(new Dictionary<string, string[]>
+      {
+         ["Email"] = ["Required."]
+      });
+
+      var b = Error.BadRequest(new Dictionary<string, string[]>
+      {
+         ["email"] = ["Required."]
+      });
+
+      Assert.Equal(a, b);
+      Assert.True(a == b);
+      Assert.Equal(a.GetHashCode(), b.GetHashCode());
+   }
+
+   [Fact]
+   public void BadRequest_WithDictionary_DefensivelyCopiesDictionaryAndArrays()
+   {
+      var errors = new Dictionary<string, string[]>
+      {
+         ["email"] = ["Required."]
+      };
+
+      var error = Error.BadRequest(errors);
+
+      errors["email"][0] = "Mutated!";
+      errors["new"] = ["Injected!"];
+
+      Assert.False(error.Errors!.ContainsKey("new"));
+      Assert.Equal("Required.", error.Errors["email"][0]);
+   }
 }

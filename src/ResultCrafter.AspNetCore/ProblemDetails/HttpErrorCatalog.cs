@@ -8,6 +8,7 @@ namespace ResultCrafter.AspNetCore.ProblemDetails;
 /// </summary>
 public static class HttpErrorCatalog
 {
+   /// <summary>Maps <paramref name="type"/> to its RFC 9457 HTTP status code.</summary>
    public static int Status(ErrorType type)
    {
       return type switch
@@ -22,6 +23,7 @@ public static class HttpErrorCatalog
       };
    }
 
+   /// <summary>Maps <paramref name="type"/> to its snake_case ProblemDetails <c>title</c> string.</summary>
    public static string Title(ErrorType type)
    {
       return type switch
@@ -36,7 +38,7 @@ public static class HttpErrorCatalog
       };
    }
 
-   private static string DefaultDetail(ErrorType type)
+   public static string DefaultDetail(ErrorType type)
    {
       return type switch
       {

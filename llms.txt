@@ -1,6 +1,6 @@
 # ResultCrafter
 
-> A minimal, opinionated Result pattern library for modern .NET (10+). Provides `Result<T>`, `Result`, and `Error`
+> A minimal, opinionated Result pattern library for modern .NET (8+). Provides `Result<T>`, `Result`, and `Error`
 > as `readonly struct` types, with built-in RFC 9457 ProblemDetails pipeline, structured logging via
 > `[LoggerMessage]`, first-class Minimal API support, and full MVC controller support.
 > Ships as five focused NuGet packages under the `ResultCrafter.*` prefix.
@@ -17,8 +17,6 @@
   string allocations when the log level is filtered.
 - `ProblemActionResult` (controller path) calls `IProblemDetailsService.WriteAsync` inside `ExecuteResultAsync`,
   giving controllers identical pipeline behaviour to Minimal API endpoints.
-- FluentValidation validators should be registered as `Singleton` when consumed by a Singleton service (validators
-  are stateless). The default FluentValidation lifetime is `Scoped`.
 - `GetInstance` returns `PathBase + Path` only (a valid RFC 9457 relative URI reference). The host is intentionally
   excluded — it breaks behind reverse proxies.
 - `EfCoreConcurrencyExceptionHandler` is inserted *before* `ResultCrafterExceptionHandler` in the DI list so
@@ -35,7 +33,7 @@
 
 - `ResultCrafter.Core` — primitives only, no framework dependencies.
 - `ResultCrafter.AspNetCore` — ProblemDetails pipeline, exception handler, Minimal API extensions, MVC controller
-  extensions. Requires .NET 10+.
+   extensions. Requires .NET 8+. Multi-targets net8.0;net9.0;net10.0.
 - `ResultCrafter.AspNetCore.EfCore` — intercepts `DbUpdateConcurrencyException` → 409. Call
   `AddResultCrafterEfCore()` after `AddResultCrafter()`.
 - `ResultCrafter.FluentValidation` — `ValidateToResultAsync` bridge from `IValidator<T>` to `Error.BadRequest`.
@@ -78,18 +76,20 @@
 - [MinimalApiResultExtensions.cs](src/ResultCrafter.AspNetCore/Endpoints/MinimalApiResultExtensions.cs):
   `ToOkResult`, `ToCreatedResult`, `ToAcceptedResult`, `ToNoContentResult`, `ToProblemResult` — all return
   `Results<TSuccess, ProblemHttpResult>` typed unions for OpenAPI inference.
-- [RouteHandlerBuilderExtensions.cs](src/ResultCrafter.AspNetCore/Endpoints/RouteHandlerBuilderExtensions.cs):
-  `.ProducesBadRequest()`, `.ProducesUnauthorized()`, `.ProducesForbidden()`, `.ProducesNotFound()`,
-  `.ProducesConflict()` — OpenAPI documentation only, no runtime effect. Uses C# `extension` syntax (.NET 10).
+- [RouteHandlerBuilderExtensions.cs](...):
+   `.ProducesBadRequest()`, `.ProducesUnauthorized()`, `.ProducesForbidden()`, `.ProducesNotFound()`,
+   `.ProducesConflict()` — OpenAPI documentation only, no runtime effect.
 
 ### ASP.NET Core — MVC controllers (`src/ResultCrafter.AspNetCore/Controllers/`)
 
 - [ControllerResultExtensions.cs](src/ResultCrafter.AspNetCore/Controllers/ControllerResultExtensions.cs):
   `ToOkResult`, `ToCreatedResult`, `ToAcceptedResult`, `ToNoContentResult`, `ToProblemResult` — returns
   `ActionResult<T>` / `IActionResult`. Failure path returns `ProblemActionResult`.
-- [ProblemActionResult.cs](src/ResultCrafter.AspNetCore/Controllers/ProblemActionResult.cs):
-  `ActionResult` subclass. `ExecuteResultAsync` calls `IProblemDetailsService.WriteAsync` so enrichment and logging
-  fire identically to the Minimal API path.
+- [ProblemActionResult.cs](...): `ActionResult` subclass. `ExecuteResultAsync` calls
+  `IProblemDetailsService.WriteAsync` (no fallback — a writer is always present because
+  `AddResultCrafter()` guarantees `AddProblemDetails()` is registered). Enrichment, 4xx
+   logging, and internal marker-extension stripping fire from `ConfigureResultCrafterProblemDetails`
+   identically to the Minimal API path. No `Clone` helper or manual JSON fallback exists.
 - [ControllerResultAttributes.cs](src/ResultCrafter.AspNetCore/Controllers/ControllerResultAttributes.cs):
   `[ProducesBadRequest]`, `[ProducesUnauthorized]`, `[ProducesForbidden]`, `[ProducesNotFound]`,
   `[ProducesConflict]` — each inherits `ProducesResponseTypeAttribute<ProblemDetails>`, `AllowMultiple = true`.
@@ -186,8 +186,11 @@ All tests use xUnit v3. Test files mirror the source namespace they cover.
 - Never add per-request host resolution to `GetInstance` — it must remain a relative URI for proxy safety.
 - `x-rc` and `x-rc-error-id` are internal pipeline markers. They are always stripped before the response is
   written. Do not document them as public API.
-- `IProblemDetailsService.WriteAsync` (not `TryWriteAsync`) is the correct method name in .NET 10.
-
+- Both `IProblemDetailsService.WriteAsync` and `TryWriteAsync` exist. Use `WriteAsync` when a
+  writer is guaranteed (i.e. inside ResultCrafter, where `AddResultCrafter()` always calls
+  `AddProblemDetails()`). Use `TryWriteAsync` only when a fallback is needed if no writer is
+   registered. `WriteAsync` delegates to `TryWriteAsync` internally and throws
+   `InvalidOperationException` if no writer handled the context.
 ## Optional
 
 - [README.md](README.md): Full usage documentation, alternatives comparison, configuration reference, performance

@@ -32,19 +32,6 @@ internal sealed class EfCoreConcurrencyExceptionHandler(ILogger<EfCoreConcurrenc
 
       var error = Error.ConcurrencyConflict();
 
-      ResultCrafterLogger.LogClientError(
-         logger,
-         LogLevel.Warning,
-         HttpErrorCatalog.Status(error.Type),
-         HttpErrorCatalog.Title(error.Type),
-         HttpErrorCatalog.ResolveDetail(error),
-         error.Type.ToString(),
-         httpContext.Request.Method,
-         httpContext.Request.Path.Value ?? string.Empty,
-         ProblemDetailsEnricher.GetInstance(httpContext),
-         ProblemDetailsEnricher.GetTraceId(httpContext),
-         httpContext.TraceIdentifier);
-
       var pd = ProblemDetailsBuilder.Build(error);
 
       var pds = httpContext.RequestServices.GetRequiredService<IProblemDetailsService>();

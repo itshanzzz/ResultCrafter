@@ -21,17 +21,20 @@ public static class ValidatorExtensions
       CancellationToken ct = default)
    {
       var result = await validator.ValidateAsync(instance, ct);
-
       if (result.IsValid)
       {
          return null;
       }
 
       var errors = result.Errors
-                         .GroupBy(e => e.PropertyName, StringComparer.OrdinalIgnoreCase)
+                         .GroupBy(
+                            e => string.IsNullOrWhiteSpace(e.PropertyName) ? "_" : e.PropertyName,
+                            StringComparer.OrdinalIgnoreCase)
                          .ToDictionary(
                             g => g.Key,
                             g => g.Select(e => e.ErrorMessage)
+                                  .Where(m => !string.IsNullOrWhiteSpace(m))
+                                  .Distinct(StringComparer.Ordinal)
                                   .ToArray(),
                             StringComparer.OrdinalIgnoreCase);
 

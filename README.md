@@ -2,8 +2,11 @@
 
 # ResultCrafter
 
-A minimal, opinionated Result pattern library for modern .NET, with built-in RFC 9457 ProblemDetails, structured
-logging, and first-class Minimal API support.
+A minimal, opinionated Result pattern library for **modern .NET (8+)**, with built-in **RFC 9457 ProblemDetails**,
+structured logging, and first-class Minimal API support — plus full MVC controller support.
+
+ResultCrafter ships as five focused NuGet packages under the `ResultCrafter.*` prefix and **multi-targets**
+`net8.0`, `net9.0`, and `net10.0`.
 
 ---
 
@@ -185,10 +188,12 @@ errors alongside Result types for expected ones.
 | Package                           | Purpose                                                                                                                                                        |
 |-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `ResultCrafter.Core`              | The `Result<T>`, `Result`, `Error`, and `ErrorType` primitives. No framework dependencies.                                                                     |
-| `ResultCrafter.AspNetCore`        | RFC 9457 ProblemDetails pipeline, `IExceptionHandler`, structured logging, Minimal API extensions, and MVC controller extensions. Requires .NET 10+.           |
+| `ResultCrafter.AspNetCore`        | RFC 9457 ProblemDetails pipeline, `IExceptionHandler`, structured logging, Minimal API extensions, and MVC controller extensions.                              |
 | `ResultCrafter.AspNetCore.EfCore` | Intercepts `DbUpdateConcurrencyException` and maps it to a 409 ProblemDetails response automatically.                                                          |
 | `ResultCrafter.FluentValidation`  | Bridges `IValidator<T>` to `Error.BadRequest` with field-level error dictionaries.                                                                             |
 | `ResultCrafter.MediatR`           | MediatR pipeline behaviors that run FluentValidation automatically for handlers returning `Result` / `Result<T>`, short-circuiting with structured 400 errors. |
+
+All packages multi-target: **`net8.0`, `net9.0`, `net10.0`**.
 
 ---
 
@@ -393,7 +398,7 @@ ProblemDetails shape, the same `instance` / `traceId` / `requestId` enrichment, 
 the same `IExceptionHandler` behaviour for 5xx errors. None of this needs to be wired separately.
 
 This parity is not accidental. On the failure path, `ControllerResultExtensions` returns a `ProblemActionResult`, a
-thin `ActionResult` subclass that routes through `IProblemDetailsService.TryWriteAsync` on execution, so the same
+thin `ActionResult` subclass that calls `IProblemDetailsService.WriteAsync` on execution, so the same
 `ConfigureResultCrafterProblemDetails` post-configure callback fires for both paths.
 
 ### Extension methods
@@ -712,17 +717,14 @@ expectation is that new behavior ships with new tests.
 
 ## Limitations
 
-### .NET 10 and above only
+### .NET 8 and above only
 
-ResultCrafter requires .NET 10 or later. This is a deliberate choice.
+ResultCrafter requires .NET 8 or later. All packages multi-target `net8.0`, `net9.0`, and `net10.0`,
+so the correct build is selected automatically — no conditional references or compatibility shims are needed.
 
-This is primarily a product scope and support decision, not because the core building blocks do not exist on earlier
-runtimes. ASP.NET Core already provides the necessary primitives in earlier versions (including `IExceptionHandler` and
-the ProblemDetails service), but ResultCrafter intentionally targets .NET 10+ to stay focused on a single, modern
-integration path with no compatibility shims.
-
-Supporting older runtimes would expand the test matrix, documentation surface, and maintenance burden. If you need
-support for .NET 8 or 9 today, the alternatives listed above are good options.
+The .NET 8 minimum is deliberate. It is the lowest version that ships `IExceptionHandler`,
+`IProblemDetailsService`, and the ProblemDetails middleware pipeline that ResultCrafter builds on.
+Supporting .NET 6 or 7 would require wrapping or reimplementing those primitives, which is out of scope.
 
 ---
 
